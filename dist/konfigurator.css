@@ -137,16 +137,11 @@
   object-fit: contain;
 }
 
-/* CMS: ganze Marke gesperrt (Hersteller „Aktiv" = aus).
-   Opacity/Graustufe NUR aufs Logo (nicht auf den Button), damit der Tooltip
-   voll sichtbar bleibt. overflow:visible, damit der Tooltip aus dem Pill ragt. */
+/* CMS: ganze Marke gesperrt (Hersteller „Aktiv" = aus): ausgegraut + entsättigt
+   + nicht klickbar. Opacity/Graustufe dürfen hier am ganzen Button liegen, weil
+   der Tooltip NICHT im Button hängt (siehe unten), sondern am <body>. */
 .calc__manufacturer--gesperrt {
   cursor: not-allowed;
-  position: relative;
-  overflow: visible;
-}
-
-.calc__manufacturer--gesperrt img {
   opacity: 0.3;
   filter: grayscale(1);
 }
@@ -155,25 +150,13 @@
   border-color: #ddd;
 }
 
-.calc__manufacturer--gesperrt:hover .calc__tooltip--brand {
-  display: block;
-}
-
-/* Marken-Tooltip UNTERHALB des Buttons (Buttons liegen oben in der Karte).
-   Selektor mit .calc__manufacturer davor = höhere Spezifität als die Basis
-   .calc__tooltip (die weiter unten in der Datei steht) — sonst überschreibt die
-   Basis `bottom` und top+bottom kollabieren die Box. */
-.calc__manufacturer .calc__tooltip--brand {
-  bottom: auto;
-  top: calc(100% + 10px);
-  width: 180px;
-}
-
-.calc__manufacturer .calc__tooltip--brand::after {
-  top: auto;
-  bottom: 100%;
-  border-top-color: transparent;
-  border-bottom-color: #1b1b1b;
+/* Marken-Tooltip „Aktuell nicht verfügbar": der Controller hängt ihn ans <body>
+   (nicht in den gesperrten Button), damit er dessen reduzierte Opacity NICHT erbt.
+   Position + Ein-/Ausblenden steuert das JS per mouseenter/mouseleave; das
+   dunkle Sprechblasen-Styling kommt von der Basisklasse .calc__tooltip.
+   Pfeil aus, da frei am Cursor/Button positioniert. */
+.calc__tooltip--brand::after {
+  display: none;
 }
 
 /* ─── Dropdowns ─────────────────────────────────────────────────── */

@@ -169,14 +169,32 @@
       const name = btn.getAttribute('data-brand');
       const gesperrt = isBrandGesperrt(name);
       btn.classList.toggle('calc__manufacturer--gesperrt', gesperrt);
-      const existing = btn.querySelector('.calc__tooltip--brand');
-      if (gesperrt && !existing) {
+
+      if (gesperrt && !btn._lockTip) {
+        // Tooltip ans <body> hängen (NICHT in den Button), damit er nicht die
+        // reduzierte Opacity des gesperrten Buttons erbt. Position + Anzeige per JS.
         const tip = document.createElement('span');
         tip.className = 'calc__tooltip calc__tooltip--brand';
         tip.textContent = 'Aktuell nicht verfügbar';
-        btn.appendChild(tip);
-      } else if (!gesperrt && existing) {
-        existing.remove();
+        tip.style.display = 'none';
+        document.body.appendChild(tip);
+        btn._lockTip = tip;
+
+        const show = () => {
+          const r = btn.getBoundingClientRect();
+          tip.style.position = 'fixed';
+          tip.style.top = (r.bottom + 10) + 'px';
+          tip.style.left = (r.left + r.width / 2) + 'px';
+          tip.style.bottom = 'auto';
+          tip.style.transform = 'translateX(-50%)';
+          tip.style.display = 'block';
+        };
+        const hide = () => { tip.style.display = 'none'; };
+        btn.addEventListener('mouseenter', show);
+        btn.addEventListener('mouseleave', hide);
+      } else if (!gesperrt && btn._lockTip) {
+        btn._lockTip.remove();
+        btn._lockTip = null;
       }
     });
   }
