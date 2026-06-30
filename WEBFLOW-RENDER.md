@@ -83,3 +83,42 @@ Inhalt = eine Collection-Liste „Fahrzeuge".
 Die Fahrzeuge-Collection hat den Slug **`produkte`**, Detailseiten liegen also unter
 `/produkte/<item-slug>`. Falls das je geändert wird, in `data-provider.dom.js` die
 Konstante `DETAIL_BASE` anpassen.
+
+## Hersteller-Status (Marke sperren) — zweite versteckte Liste
+
+Damit eine ganze Marke im Konfigurator **ausgegraut + nicht klickbar** wird (Hover-
+Tooltip „Aktuell nicht verfügbar"), liest der Provider eine **zweite** versteckte
+Collection-Liste aus der **Hersteller**-Collection. Steuerung über das vorhandene
+Switch-Feld **„Aktiv"** auf dem Hersteller.
+
+```html
+<div class="et-hersteller-data" style="display:none">
+  <!-- Collection List: Hersteller (KEIN Filter — alle anzeigen!) -->
+  <div class="et-hersteller"
+       data-name="{{ Name }}"
+       data-aktiv="{{ Aktiv }}"></div>
+</div>
+```
+
+### So wird's im Designer gebaut
+1. **Wrapper** `et-hersteller-data` (Div), `display:none`.
+2. Darin eine **Collection List** → Quelle **Hersteller**, **OHNE Filter** (alle Marken,
+   auch inaktive — sonst können wir die inaktiven nicht ausgrauen).
+3. Item-Div = Klasse `et-hersteller` mit Custom Attributes:
+   - `data-name` = Name (muss exakt „John Deere/Case IH/JCB/Deutz-Fahr" sein — wird mit
+     dem `data-brand` der Buttons abgeglichen).
+   - `data-aktiv` = Feld **Aktiv** (Switch). Webflow gibt „true"/„false" aus.
+
+### Wie der Provider das interpretiert
+- `aktiv = false` (bzw. `0/no/off/nein/aus`) → Marke gesperrt: Button ausgegraut,
+  nicht klickbar, Hover-Tooltip „Aktuell nicht verfügbar".
+- Fehlt die Liste komplett (oder ein Hersteller fehlt darin) → gilt als **verfügbar**
+  (kein Sperren). Rückwärtskompatibel: ohne diese Liste verhält sich alles wie bisher.
+- **Fallback**, falls die `data-aktiv`-Bindung in Webflow zickt: statt des Attributs ein
+  Kind-Element `<div class="et-inaktiv">` ins Item legen und per **Conditional Visibility
+  „Aktiv ist aus"** einblenden — der Provider wertet auch das als gesperrt.
+- Sind eine/mehrere Marken gesperrt, wählt der Konfigurator beim Start automatisch die
+  **erste verfügbare** Marke aus.
+
+> Wie bei den Fahrzeugen: CMS-Änderungen am „Aktiv"-Switch werden erst nach einem
+> **vollständigen Site-Publish** im gerenderten HTML sichtbar.

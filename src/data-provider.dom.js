@@ -89,9 +89,29 @@
     return data;
   }
 
+  // Hersteller-Status aus der versteckten Liste `.et-hersteller-data`.
+  // Pro `.et-hersteller`: data-name (Pflicht), data-aktiv (Switch "true"/"false"),
+  // optional data-logo. Robust: inaktiv, wenn data-aktiv false-artig ODER ein
+  // `.et-inaktiv`-Marker vorhanden ist (Fallback via Conditional Visibility).
+  function readHersteller() {
+    var out = {};
+    document.querySelectorAll('.et-hersteller-data .et-hersteller').forEach(function (el) {
+      var name = (el.getAttribute('data-name') || '').trim();
+      if (!name) return;
+      var a = (el.getAttribute('data-aktiv') || '').trim().toLowerCase();
+      var inaktivMarker = !!el.querySelector('.et-inaktiv');
+      var aktiv = !inaktivMarker && a !== 'false' && a !== '0' && a !== 'no' && a !== 'off' && a !== 'nein' && a !== 'aus';
+      out[name] = { name: name, aktiv: aktiv, logo: (el.getAttribute('data-logo') || '').trim() };
+    });
+    return out;
+  }
+
   var TraktorRepository = {
     getAll: function () { return Promise.resolve(readAll()); },
     getById: function (id) { var all = readAll(); return Promise.resolve(all[id] || null); },
+    // Record<herstellerName, { name, aktiv, logo }>. Leeres Objekt, wenn keine
+    // Hersteller-Liste gerendert ist (dann gilt alles als verfügbar).
+    getHersteller: function () { return Promise.resolve(readHersteller()); },
   };
 
   if (typeof module !== 'undefined' && module.exports) {

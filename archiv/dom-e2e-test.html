@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DOM-Provider E2E-Test</title>
   <style> body { margin:0; background:#3a3a3a; padding:24px; } </style>
-  <link rel="stylesheet" href="../dist/konfigurator.css?v=tf6">
+  <link rel="stylesheet" href="../dist/konfigurator.css?v=tf7">
 </head>
 <body>
 
@@ -75,9 +75,18 @@
 
   </div>
 
+  <!-- Hersteller-Status (versteckt) — simuliert die Webflow-Hersteller-Liste.
+       Case IH hier auf aktiv=false, um die Sperre/Ausgrauung zu testen. -->
+  <div class="et-hersteller-data" style="display:none">
+    <div class="et-hersteller" data-name="John Deere" data-aktiv="true"></div>
+    <div class="et-hersteller" data-name="Case IH" data-aktiv="false"></div>
+    <div class="et-hersteller" data-name="JCB" data-aktiv="true"></div>
+    <div class="et-hersteller" data-name="Deutz-Fahr" data-aktiv="true"></div>
+  </div>
+
   <!-- Konfigurator-Mount (Markup injiziert das Bundle selbst) -->
   <div class="et-konfigurator"></div>
 
-  <script src="../dist/easytraktor-konfigurator.js?v=tf6"></script>
+  <script src="../dist/easytraktor-konfigurator.js?v=tf7"></script>
 </body>
 </html>

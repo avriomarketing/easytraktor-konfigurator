@@ -55,6 +55,7 @@
   // ── Laufzeit-Zustand ──────────────────────────────────────────────────
   const state = {
     allData: {},        // Record<modelName, TractorData>
+    hersteller: {},     // Record<herstellerName, { name, aktiv, logo }>
     brand: null,        // aktiver Markenfilter (null = alle)
     model: null,        // gewählter Modellname
     stundenTiers: [],   // verfügbare Stundenstufen des Modells, z. B. [300,500,750,...]
@@ -113,6 +114,9 @@
     };
 
     state.allData = await TraktorRepository.getAll();
+    state.hersteller = TraktorRepository.getHersteller
+      ? await TraktorRepository.getHersteller()
+      : {};
 
     setupDropdownToggles();
     setupBrandButtons();
@@ -121,9 +125,11 @@
     setupCta();
     renderDateDropdowns();
 
-    // Erstauswahl: erste verfügbare Marke + erstes Modell
-    const firstActive = root.querySelector('.calc__manufacturer--active[data-brand]');
-    state.brand = firstActive ? firstActive.getAttribute('data-brand') : null;
+    // Gesperrte Marken (Hersteller „Aktiv" = aus) ausgrauen + nicht klickbar
+    applyBrandAvailability();
+
+    // Erstauswahl: erste VERFÜGBARE Marke + erstes Modell
+    pickInitialBrand();
     renderModelDropdown();
     selectFirstModel();
 
@@ -135,6 +141,8 @@
     dom.brands.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        // Gesperrte Marke (Hersteller „Aktiv" = aus) ist nicht wählbar
+        if (btn.classList.contains('calc__manufacturer--gesperrt')) return;
         dom.brands.forEach((b) => {
           b.classList.remove('calc__manufacturer--active');
           b.classList.add('calc__manufacturer--inactive');
@@ -147,6 +155,52 @@
         recalc();
       });
     });
+  }
+
+  // Gesperrte Marken markieren: Hersteller mit „Aktiv" = aus bekommen die Klasse
+  // --gesperrt (ausgegraut + nicht klickbar) und einen Hover-Tooltip.
+  function isBrandGesperrt(name) {
+    const h = state.hersteller[name];
+    return !!(h && h.aktiv === false);
+  }
+
+  function applyBrandAvailability() {
+    dom.brands.forEach((btn) => {
+      const name = btn.getAttribute('data-brand');
+      const gesperrt = isBrandGesperrt(name);
+      btn.classList.toggle('calc__manufacturer--gesperrt', gesperrt);
+      const existing = btn.querySelector('.calc__tooltip--brand');
+      if (gesperrt && !existing) {
+        const tip = document.createElement('span');
+        tip.className = 'calc__tooltip calc__tooltip--brand';
+        tip.textContent = 'Aktuell nicht verfügbar';
+        btn.appendChild(tip);
+      } else if (!gesperrt && existing) {
+        existing.remove();
+      }
+    });
+  }
+
+  // Erste wählbare Marke aktiv setzen. Ist die vorab aktive Marke gesperrt,
+  // springt die Auswahl auf den ersten nicht gesperrten Button.
+  function pickInitialBrand() {
+    let active = root.querySelector('.calc__manufacturer--active[data-brand]');
+    if (!active || active.classList.contains('calc__manufacturer--gesperrt')) {
+      let firstAvail = null;
+      dom.brands.forEach((b) => {
+        if (!firstAvail && !b.classList.contains('calc__manufacturer--gesperrt')) firstAvail = b;
+      });
+      if (firstAvail) {
+        dom.brands.forEach((b) => {
+          b.classList.remove('calc__manufacturer--active');
+          b.classList.add('calc__manufacturer--inactive');
+        });
+        firstAvail.classList.add('calc__manufacturer--active');
+        firstAvail.classList.remove('calc__manufacturer--inactive');
+        active = firstAvail;
+      }
+    }
+    state.brand = active ? active.getAttribute('data-brand') : null;
   }
 
   // ── Modell-Dropdown (datengetrieben) ──────────────────────────────────
