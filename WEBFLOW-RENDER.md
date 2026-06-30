@@ -91,12 +91,17 @@ Tooltip „Aktuell nicht verfügbar"), liest der Provider eine **zweite** verste
 Collection-Liste aus der **Hersteller**-Collection. Steuerung über das vorhandene
 Switch-Feld **„Aktiv"** auf dem Hersteller.
 
+> Hinweis: Webflow kann ein **Switch-Feld NICHT an ein Custom Attribute binden**
+> (kommt leer an). Der „Aktiv"-Status wird daher über ein **Marker-Kindelement mit
+> Conditional Visibility** transportiert, nicht über ein Attribut.
+
 ```html
 <div class="et-hersteller-data" style="display:none">
   <!-- Collection List: Hersteller (KEIN Filter — alle anzeigen!) -->
-  <div class="et-hersteller"
-       data-name="{{ Name }}"
-       data-aktiv="{{ Aktiv }}"></div>
+  <div class="et-hersteller" data-name="{{ Name }}">
+    <!-- erscheint NUR, wenn „Aktiv" AUS ist (Conditional Visibility) -->
+    <div class="et-hersteller-inaktiv"></div>
+  </div>
 </div>
 ```
 
@@ -104,19 +109,20 @@ Switch-Feld **„Aktiv"** auf dem Hersteller.
 1. **Wrapper** `et-hersteller-data` (Div), `display:none`.
 2. Darin eine **Collection List** → Quelle **Hersteller**, **OHNE Filter** (alle Marken,
    auch inaktive — sonst können wir die inaktiven nicht ausgrauen).
-3. Item-Div = Klasse `et-hersteller` mit Custom Attributes:
+3. Item-Div = Klasse `et-hersteller` mit Custom Attribute:
    - `data-name` = Name (muss exakt „John Deere/Case IH/JCB/Deutz-Fahr" sein — wird mit
      dem `data-brand` der Buttons abgeglichen).
-   - `data-aktiv` = Feld **Aktiv** (Switch). Webflow gibt „true"/„false" aus.
+4. **Ins Item ein leeres Div** mit Klasse `et-hersteller-inaktiv` legen. Dieses Div →
+   **Settings → Conditional Visibility → „Aktiv" ist NICHT gesetzt / aus**.
+   ⚠️ Richtung beachten: Der Marker darf nur bei **inaktiven** Marken erscheinen.
 
 ### Wie der Provider das interpretiert
-- `aktiv = false` (bzw. `0/no/off/nein/aus`) → Marke gesperrt: Button ausgegraut,
-  nicht klickbar, Hover-Tooltip „Aktuell nicht verfügbar".
+- Item enthält ein `.et-hersteller-inaktiv` (bzw. `.et-inaktiv`) → Marke **gesperrt**:
+  Button ausgegraut, nicht klickbar, Hover-Tooltip „Aktuell nicht verfügbar".
+- Kein Marker → Marke verfügbar. (Ebenso optional via `data-aktiv` = `false`, falls je ein
+  Textfeld statt Switch genutzt wird.)
 - Fehlt die Liste komplett (oder ein Hersteller fehlt darin) → gilt als **verfügbar**
   (kein Sperren). Rückwärtskompatibel: ohne diese Liste verhält sich alles wie bisher.
-- **Fallback**, falls die `data-aktiv`-Bindung in Webflow zickt: statt des Attributs ein
-  Kind-Element `<div class="et-inaktiv">` ins Item legen und per **Conditional Visibility
-  „Aktiv ist aus"** einblenden — der Provider wertet auch das als gesperrt.
 - Sind eine/mehrere Marken gesperrt, wählt der Konfigurator beim Start automatisch die
   **erste verfügbare** Marke aus.
 

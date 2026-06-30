@@ -99,7 +99,7 @@
       var name = (el.getAttribute('data-name') || '').trim();
       if (!name) return;
       var a = (el.getAttribute('data-aktiv') || '').trim().toLowerCase();
-      var inaktivMarker = !!el.querySelector('.et-inaktiv');
+      var inaktivMarker = !!el.querySelector('.et-hersteller-inaktiv, .et-inaktiv');
       var aktiv = !inaktivMarker && a !== 'false' && a !== '0' && a !== 'no' && a !== 'off' && a !== 'nein' && a !== 'aus';
       out[name] = { name: name, aktiv: aktiv, logo: (el.getAttribute('data-logo') || '').trim() };
     });
