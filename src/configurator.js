@@ -40,15 +40,19 @@
   'use strict';
 
   // ── Konfiguration (View-seitige Konstanten, keine Preislogik) ─────────
+  // Monatsnamen, 0-basiert (0 = Januar … 11 = Dezember).
   const MONTHS = [
     'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-    'Juli', 'August', 'September', 'Oktober', 'November',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
   ];
-  const START_YEAR = 2026;
-  const MIN_MIETDAUER = 2;           // Monate
-  const MAX_MIETDAUER = 9;           // letzter belegter Index in month-price
-  const SELBSTBEHALT = [1000, 2500]; // EUR-Stufen
-  const TYPEFORM_ID = 'tyctUmUQ';    // Angebots-Formular (Popup)
+  // Buchbares Fenster (0-basierte Indizes): Start nur Feb…Sep, Ende Start+2…Nov.
+  // Dez/Jan sind nie Teil einer Miete. Spätester Start = Sep (Sep+2 = Nov).
+  const FEB_IDX = 1;                  // frühester möglicher Start
+  const SEP_IDX = 8;                  // spätester Start
+  const NOV_IDX = 10;                 // spätestes Ende
+  const MIN_MIETDAUER = 2;            // Ende = Start + 2 (mind. ein voller Monat dazwischen)
+  const SELBSTBEHALT = [1000, 2500];  // EUR-Stufen
+  const TYPEFORM_ID = 'tyctUmUQ';     // Angebots-Formular (Popup)
 
   const eur = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -61,8 +65,14 @@
     stundenTiers: [],   // verfügbare Stundenstufen des Modells, z. B. [300,500,750,...]
     stundenIndex: 0,
     selbstbehaltIndex: 1,
-    startIndex: 3,      // Default April
-    endIndex: 5,        // Default Juni
+    // Datumsfenster — werden in computeDateWindow() aus dem aktuellen
+    // Europe/Berlin-Datum abgeleitet (Defaults hier nur Platzhalter).
+    displayYear: 0,        // anzuzeigendes Jahr (laufendes oder Folgejahr)
+    earliestStartIdx: 1,   // frühester wählbarer Start-Monatsindex
+    latestStartIdx: 8,     // spätester wählbarer Start (September)
+    lastEndIdx: 10,        // spätestes Ende (November)
+    startIndex: 1,
+    endIndex: 3,
   };
 
   // ── DOM-Referenzen ────────────────────────────────────────────────────
@@ -117,6 +127,8 @@
     state.hersteller = TraktorRepository.getHersteller
       ? await TraktorRepository.getHersteller()
       : {};
+
+    computeDateWindow();   // Anzeigejahr + wählbare Start-/Endmonate aus heutigem Datum
 
     setupDropdownToggles();
     setupBrandButtons();
@@ -278,6 +290,42 @@
   }
 
   // ── Datums-Dropdowns ──────────────────────────────────────────────────
+
+  // Aktueller Monat (1–12) + Jahr in der Zeitzone Europe/Berlin — unabhängig
+  // von der Geräte-Zeitzone des Besuchers.
+  function nowBerlin() {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Berlin', year: 'numeric', month: 'numeric',
+    }).formatToParts(new Date());
+    let year = 0, month = 0;
+    parts.forEach((p) => {
+      if (p.type === 'year') year = Number(p.value);
+      if (p.type === 'month') month = Number(p.value);
+    });
+    return { year: year, month: month };
+  }
+
+  // Leitet Anzeigejahr + wählbares Start-/Endfenster aus dem heutigen Datum ab.
+  // Regeln: Start echt nach dem aktuellen Monat; bis August -> laufendes Jahr,
+  // ab September -> Folgejahr (dann volle Liste Feb–Sep). Start Feb…Sep, Ende
+  // Start+2…Nov, alles im selben Jahr.
+  function computeDateWindow() {
+    const now = nowBerlin();
+    const currentMonthIdx = now.month - 1;            // 0-basiert
+    // Anzeigejahr: aktueller Monat <= August -> laufend, sonst Folgejahr.
+    state.displayYear = (now.month <= 8) ? now.year : (now.year + 1);
+    // Frühester Start: im laufenden Jahr echt nach aktuellem Monat (min. Februar);
+    // im Folgejahr volle Liste ab Februar.
+    state.earliestStartIdx = (state.displayYear === now.year)
+      ? Math.max(FEB_IDX, currentMonthIdx + 1)
+      : FEB_IDX;
+    state.latestStartIdx = SEP_IDX;
+    state.lastEndIdx = NOV_IDX;
+    // Defaults: frühester Start, Ende = Start + 2.
+    state.startIndex = state.earliestStartIdx;
+    state.endIndex = state.startIndex + MIN_MIETDAUER;
+  }
+
   function renderDateDropdowns() {
     renderStartOptions();
     renderEndOptions();
@@ -286,14 +334,13 @@
   function renderStartOptions() {
     const list = dom.startDd.querySelector('.calc__dropdown-list');
     list.innerHTML = '';
-    // Start nur so spät, dass mind. MIN_MIETDAUER Monate übrig bleiben
-    const lastStart = MONTHS.length - 1 - MIN_MIETDAUER;
-    for (let i = 0; i <= lastStart; i++) {
+    // Startmonate: frühester gültiger … spätester Start (September).
+    for (let i = state.earliestStartIdx; i <= state.latestStartIdx; i++) {
       list.appendChild(makeMonthItem(i, () => {
         state.startIndex = i;
         setDropdownValue(dom.startDd, monthLabel(i));
         markSelected(list, i);
-        // Mietende ggf. nachziehen
+        // Mietende ggf. nachziehen (mind. Start + 2)
         if (state.endIndex < i + MIN_MIETDAUER) state.endIndex = i + MIN_MIETDAUER;
         renderEndOptions();
         closeDropdown(dom.startDd);
@@ -307,8 +354,9 @@
   function renderEndOptions() {
     const list = dom.endDd.querySelector('.calc__dropdown-list');
     list.innerHTML = '';
+    // Endmonate: Start + 2 … November.
     const first = state.startIndex + MIN_MIETDAUER;
-    const last = Math.min(MONTHS.length - 1, state.startIndex + MAX_MIETDAUER);
+    const last = state.lastEndIdx;
     for (let i = first; i <= last; i++) {
       list.appendChild(makeMonthItem(i, () => {
         state.endIndex = i;
@@ -331,7 +379,7 @@
     return li;
   }
 
-  function monthLabel(i) { return MONTHS[i] + ' ' + START_YEAR; }
+  function monthLabel(i) { return MONTHS[i] + ' ' + state.displayYear; }
 
   function markSelected(list, index) {
     list.querySelectorAll('.calc__dropdown-item').forEach((li) => {
