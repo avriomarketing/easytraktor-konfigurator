@@ -20,12 +20,14 @@
     var items = document.querySelectorAll('.accordion-item');
     if (!items.length) return;
 
-    // Styles einmalig injizieren: Cursor + +/-Animation
+    // Styles einmalig injizieren: ganze Card klickbar + +/-Animation.
+    // Der Antworttext selbst zeigt normalen Cursor (Klick dort schließt nicht).
     if (!document.getElementById('et-faq-css')) {
       var st = document.createElement('style');
       st.id = 'et-faq-css';
       st.textContent =
-        '.accordion-header,.accordion-side,.accordion-btn{cursor:pointer;}' +
+        '.accordion-item{cursor:pointer;}' +
+        '.accordion-item .acordion-body,.accordion-item .accordion-body{cursor:auto;}' +
         '.accordion-btn-line{transition:transform .3s ease,opacity .3s ease;}' +
         '.accordion-item.is-open .accordion-btn-line.vertical{transform:rotate(90deg);opacity:0;}';
       document.head.appendChild(st);
@@ -39,7 +41,15 @@
       if (!body) return;
       body.style.cssText = SHUT; // beim Laden alle zu
 
-      function toggle() {
+      // Klick irgendwo auf die Card togglet. Ausnahme: Klick direkt im geöffneten
+      // Antworttext -> nicht schließen (damit man den Text markieren/lesen kann).
+      // Capture-Phase (true): unser Handler greift ZUERST. Per stopPropagation
+      // verhindern wir, dass bestehende (kaputte) Template-Handler auf Titel/Plus
+      // den Klick auch noch verarbeiten und sofort wieder zuklappen (Doppel-Toggle).
+      item.addEventListener('click', function (e) {
+        if (e.target.closest('.acordion-body, .accordion-body')) return;
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         var isOpen = item.classList.contains('is-open');
         // andere schließen -> immer nur eine Frage offen
         items.forEach(function (o) {
@@ -51,12 +61,7 @@
         });
         if (isOpen) { item.classList.remove('is-open'); body.style.cssText = SHUT; }
         else { item.classList.add('is-open'); body.style.cssText = OPEN; }
-      }
-
-      var header = item.querySelector('.accordion-header');
-      var side = item.querySelector('.accordion-side');
-      if (header) header.addEventListener('click', toggle);
-      if (side) side.addEventListener('click', toggle);
+      }, true);
     });
   }
 
