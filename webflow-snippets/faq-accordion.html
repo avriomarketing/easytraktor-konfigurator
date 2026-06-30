@@ -1,0 +1,66 @@
+<!--
+  FAQ-Akkordion für easyTraktor (Webflow)
+  =======================================
+  Eigenständiges Toggle-Script für die FAQ-Komponente (.accordion-item /
+  .accordion-header / .acordion-body / .accordion-btn-line). KEIN GSAP/Finsweet
+  nötig. Verhalten: immer nur eine Frage offen (klassisches FAQ), +/- animiert.
+
+  EINBINDEN in Webflow:
+   - FAQ nur auf EINER Seite  -> Page Settings -> Custom Code -> "Before </body> tag"
+   - FAQ auf MEHREREN Seiten  -> Project/Site Settings -> Custom Code -> Footer Code
+  Danach SITE PUBLISHEN.
+
+  Hinweis: Auf-/Zuklappen erfolgt sofort (kein Slide). Die Template-CSS hält den
+  Body sonst per height/max-height fest; deshalb setzt das Script diese Werte mit
+  !important. Das +/- (zwei .accordion-btn-line) wird per CSS animiert.
+-->
+<script>
+(function () {
+  function initFaq() {
+    var items = document.querySelectorAll('.accordion-item');
+    if (!items.length) return;
+
+    // Styles einmalig injizieren: Cursor + +/-Animation
+    if (!document.getElementById('et-faq-css')) {
+      var st = document.createElement('style');
+      st.id = 'et-faq-css';
+      st.textContent =
+        '.accordion-header,.accordion-side,.accordion-btn{cursor:pointer;}' +
+        '.accordion-btn-line{transition:transform .3s ease,opacity .3s ease;}' +
+        '.accordion-item.is-open .accordion-btn-line.vertical{transform:rotate(90deg);opacity:0;}';
+      document.head.appendChild(st);
+    }
+
+    var OPEN = 'max-height:none !important;height:auto !important;overflow:hidden !important;';
+    var SHUT = 'max-height:0 !important;height:0 !important;overflow:hidden !important;';
+
+    items.forEach(function (item) {
+      var body = item.querySelector('.acordion-body,.accordion-body');
+      if (!body) return;
+      body.style.cssText = SHUT; // beim Laden alle zu
+
+      function toggle() {
+        var isOpen = item.classList.contains('is-open');
+        // andere schließen -> immer nur eine Frage offen
+        items.forEach(function (o) {
+          if (o !== item) {
+            o.classList.remove('is-open');
+            var b = o.querySelector('.acordion-body,.accordion-body');
+            if (b) b.style.cssText = SHUT;
+          }
+        });
+        if (isOpen) { item.classList.remove('is-open'); body.style.cssText = SHUT; }
+        else { item.classList.add('is-open'); body.style.cssText = OPEN; }
+      }
+
+      var header = item.querySelector('.accordion-header');
+      var side = item.querySelector('.accordion-side');
+      if (header) header.addEventListener('click', toggle);
+      if (side) side.addEventListener('click', toggle);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initFaq);
+  else initFaq();
+})();
+</script>
