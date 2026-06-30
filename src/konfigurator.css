@@ -159,14 +159,17 @@
   display: block;
 }
 
-/* Marken-Tooltip UNTERHALB des Buttons (Buttons liegen oben in der Karte) */
-.calc__tooltip--brand {
+/* Marken-Tooltip UNTERHALB des Buttons (Buttons liegen oben in der Karte).
+   Selektor mit .calc__manufacturer davor = höhere Spezifität als die Basis
+   .calc__tooltip (die weiter unten in der Datei steht) — sonst überschreibt die
+   Basis `bottom` und top+bottom kollabieren die Box. */
+.calc__manufacturer .calc__tooltip--brand {
   bottom: auto;
   top: calc(100% + 10px);
   width: 180px;
 }
 
-.calc__tooltip--brand::after {
+.calc__manufacturer .calc__tooltip--brand::after {
   top: auto;
   bottom: 100%;
   border-top-color: transparent;
