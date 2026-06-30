@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>easyTraktor – Kalkulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- data-config = Wurzel-Container, den der Controller ansteuert -->
+  <div class="calc" data-config>
+    <div class="calc__header">
+      <span class="calc__title">Traktor-Mietpreis online kalkulieren</span>
+    </div>
+
+    <div class="calc__body">
+
+      <label class="calc__label">Herstellerauswahl</label>
+      <div class="calc__manufacturers">
+        <button class="calc__manufacturer calc__manufacturer--active" data-brand="John Deere">
+          <img src="https://www.figma.com/api/mcp/asset/d8bae476-1849-4cab-98db-21a4b4770d68" alt="John Deere">
+        </button>
+        <button class="calc__manufacturer calc__manufacturer--inactive" data-brand="Case IH">
+          <img src="https://www.figma.com/api/mcp/asset/9ad759f9-a301-4e60-9272-5e78882ab6c1" alt="Case IH">
+        </button>
+        <button class="calc__manufacturer calc__manufacturer--inactive" data-brand="JCB">
+          <img src="https://www.figma.com/api/mcp/asset/2830f487-84d1-4d60-83a5-2c5dacc1e027" alt="JCB">
+        </button>
+        <button class="calc__manufacturer calc__manufacturer--inactive" data-brand="Deutz-Fahr">
+          <img src="https://www.figma.com/api/mcp/asset/3c1834a1-d75b-4757-b1e4-d418f13196c8" alt="Deutz-Fahr">
+        </button>
+      </div>
+
+      <!-- Modell Dropdown — Items werden vom Controller datengetrieben befüllt -->
+      <label class="calc__label">Modell</label>
+      <div class="calc__dropdown" data-dropdown="model">
+        <div class="calc__dropdown-trigger" data-dropdown-trigger>
+          <span class="calc__dropdown-value">–</span>
+          <span class="calc__dropdown-arrow">&#9660;</span>
+        </div>
+        <ul class="calc__dropdown-list"></ul>
+      </div>
+
+      <!-- Mietstart / Mietende — Items werden vom Controller befüllt -->
+      <div class="calc__dates">
+        <div class="calc__date-group">
+          <label class="calc__label">Mietstart</label>
+          <div class="calc__dropdown calc__dropdown--pill" data-dropdown="start">
+            <div class="calc__dropdown-trigger" data-dropdown-trigger>
+              <span class="calc__dropdown-value calc__dropdown-value--bold">–</span>
+              <span class="calc__dropdown-arrow">&#9660;</span>
+            </div>
+            <ul class="calc__dropdown-list"></ul>
+          </div>
+        </div>
+        <div class="calc__date-group">
+          <label class="calc__label">Mietende</label>
+          <div class="calc__dropdown calc__dropdown--pill" data-dropdown="end">
+            <div class="calc__dropdown-trigger" data-dropdown-trigger>
+              <span class="calc__dropdown-value calc__dropdown-value--bold">–</span>
+              <span class="calc__dropdown-arrow">&#9660;</span>
+            </div>
+            <ul class="calc__dropdown-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Betriebsstunden Slider — rastet auf die Stufen des Modells -->
+      <div class="calc__slider-group">
+        <div class="calc__slider-header">
+          <span class="calc__label">Mietbetriebsstunden:</span>
+          <span class="calc__slider-value" data-slider-value="stunden">–</span>
+        </div>
+        <div class="calc__slider-track">
+          <input type="range" class="calc__range" data-slider="stunden" min="0" max="5" value="3">
+        </div>
+      </div>
+
+      <!-- Selbstbehalt Slider — 2 Stufen (1000 / 2500) -->
+      <div class="calc__slider-group">
+        <div class="calc__slider-header">
+          <span class="calc__label">Gewünschter Selbstbehalt:</span>
+          <span class="calc__slider-value" data-slider-value="selbstbehalt">–</span>
+        </div>
+        <div class="calc__slider-track">
+          <input type="range" class="calc__range" data-slider="selbstbehalt" min="0" max="1" value="1">
+        </div>
+      </div>
+
+      <!-- Zusatzausstattung — data-extra = Schlüssel im Datensatz -->
+      <p class="calc__label calc__label--section">Zusatzausstattung</p>
+      <div class="calc__checkboxes">
+        <label class="calc__checkbox-label">
+          <input type="checkbox" class="calc__checkbox-input" data-extra="les">
+          <span class="calc__checkbox-box"></span>
+          Lenksystem
+          <span class="calc__info-tip">
+            i
+            <span class="calc__tooltip">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lenksystem-Option für präzisere Spurführung.</span>
+          </span>
+        </label>
+        <label class="calc__checkbox-label">
+          <input type="checkbox" class="calc__checkbox-input" data-extra="rtk">
+          <span class="calc__checkbox-box"></span>
+          Lenksystem RTK
+          <span class="calc__info-tip">
+            i
+            <span class="calc__tooltip">Lorem ipsum dolor sit amet. RTK-Präzision für zentimetergenaue Spurführung auf dem Feld.</span>
+          </span>
+        </label>
+        <label class="calc__checkbox-label">
+          <input type="checkbox" class="calc__checkbox-input" data-extra="fzw">
+          <span class="calc__checkbox-box"></span>
+          Frontzapfwelle
+          <span class="calc__info-tip">
+            i
+            <span class="calc__tooltip">Lorem ipsum dolor sit amet. Frontzapfwelle für den Betrieb von Frontanbaugeräten.</span>
+          </span>
+        </label>
+        <label class="calc__checkbox-label">
+          <input type="checkbox" class="calc__checkbox-input" data-extra="zwa">
+          <span class="calc__checkbox-box"></span>
+          Zwangslenkung
+          <span class="calc__info-tip">
+            i
+            <span class="calc__tooltip">Lorem ipsum dolor sit amet. Zwangslenkung für verbesserte Manövrierfähigkeit mit Anhänger.</span>
+          </span>
+        </label>
+      </div>
+
+      <!-- Price — data-output wird vom Controller beschrieben -->
+      <div class="calc__price-section">
+        <p class="calc__price-label">Mietpreis pro Betriebsstunde:</p>
+        <p class="calc__price-value" data-output="sumHour">–</p>
+        <p class="calc__price-sub" data-output="sumMonth">–</p>
+      </div>
+
+      <button class="calc__cta">
+        Angebot anfordern
+        <span class="calc__cta-arrow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"><title>arrow-right</title><g fill="#EE7500"> <path fill-rule="evenodd" clip-rule="evenodd" d="M4 22.5L42 22.5L42 25.5L4 25.5L4 22.5Z" fill="#EE7500"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M25.8787 9.99998L39.8787 24L25.8787 38L28 40.1213L44.1213 24L28 7.87866L25.8787 9.99998Z" fill="#EE7500"></path> </g></svg>
+        </span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Hinweise (hartkodiert, gehören zu den * / ** an den Slidern) -->
+  <div class="calc__notes">
+    <p class="calc__note">Bei allen Werten handelt es sich um Nettowerte.</p>
+    <p class="calc__note">* jede weitere Mietstunde wird gemäß der vereinbarten Mietbedingungen abgerechnet</p>
+    <p class="calc__note">** Der Selbstbehalt ist auf die Maschinenbruchversicherung pro Schadensfall zu zahlen.</p>
+  </div>
+
+  <!-- Module in Reihenfolge: Model (Pricing + Datenquelle) zuerst, Controller zuletzt -->
+  <script src="../src/pricing.js"></script>
+  <script src="../src/data-provider.js"></script>
+  <script src="../src/configurator.js"></script>
+</body>
+</html>

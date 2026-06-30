@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><title>DOM-Provider Test</title></head>
+<body>
+  <!-- ===== Attrappe: so soll Webflow die Daten-Insel rendern (WEBFLOW-RENDER.md) ===== -->
+  <div class="et-data" style="display:none">
+
+    <div class="et-fahrzeug"
+         data-name="John Deere 6M 125"
+         data-slug="john-deere-6m-125"
+         data-preise-200=""
+         data-preise-300="21.9,23.9,25.9,27.9,29.9,31.9,33.9,35.9"
+         data-preise-500="19.9,20.9,21.4,21.9,22.4,22.9,23.4,25.4"
+         data-preise-750="18.9,18.9,19.4,19.9,20.4,20.9,21.9,23.4"
+         data-preise-1000="17.4,17.4,17.4,17.9,18.4,18.9,19.4,21.4"
+         data-preise-1250="15.4,15.4,15.4,15.9,16.4,16.9,17.4,19.4">
+      <div class="et-brand" data-aktiv="true">John Deere</div>
+      <div class="et-serie"></div>
+      <div class="et-optional">
+        <div class="et-extra" data-key="lenksystem" data-preis="0.5"><div class="et-label">Lenksystem</div><div class="et-info"><p>GPS-Lenksystem mit bis zu 15 cm Spurgenauigkeit.</p></div></div>
+        <div class="et-extra" data-key="lenksystem-rtk" data-preis="1.5"><div class="et-label">Lenksystem RTK</div><div class="et-info"><p>RTK 2 cm.</p><ul><li>Punkt</li></ul></div></div>
+        <div class="et-extra" data-key="frontzapfwelle" data-preis="1"><div class="et-label">Frontzapfwelle</div><div class="et-info"><p>Original Frontzapfwelle ab Werk.</p></div></div>
+        <div class="et-extra" data-key="zwangslenkung" data-preis="0.2"><div class="et-label">Zwangslenkung</div><div class="et-info"><p>K50-Kupplung.</p></div></div>
+      </div>
+    </div>
+
+    <div class="et-fahrzeug"
+         data-name="Deutz-Fahr 6180 TTV"
+         data-slug="deutz-fahr-6180-ttv"
+         data-preise-300="24.9,29.9,31.9,34.9,36.9,39.9,41.9,44.9"
+         data-preise-500="21.9,22.9,23.9,24.9,25.9,26.9,27.9,28.9"
+         data-preise-750="19.9,20.9,21.9,22.9,23.9,24.9,25.9,26.9"
+         data-preise-1000="18.9,19.9,20.9,21.9,22.9,23.9,24.9,25.9"
+         data-preise-1250="16.9,17.9,18.9,19.9,20.9,21.9,22.9,23.9">
+      <div class="et-brand" data-aktiv="true">Deutz-Fahr</div>
+      <div class="et-serie">
+        <div class="et-extra" data-key="frontzapfwelle" data-preis="1"><div class="et-label">Frontzapfwelle</div><div class="et-info"><p>Serie.</p></div></div>
+        <div class="et-extra" data-key="lenksystem-rtk" data-preis="1.5"><div class="et-label">Lenksystem RTK</div><div class="et-info"><p>Serie RTK.</p></div></div>
+      </div>
+      <div class="et-optional">
+        <div class="et-extra" data-key="lenksystem" data-preis="0.5"><div class="et-label">Lenksystem</div><div class="et-info"><p>Opt.</p></div></div>
+        <div class="et-extra" data-key="zwangslenkung" data-preis="0.2"><div class="et-label">Zwangslenkung</div><div class="et-info"><p>Opt.</p></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../src/data-provider.dom.js"></script>
+  <script>
+    TraktorRepository.getAll().then(function (d) { window.__RESULT__ = d; });
+  </script>
+</body>
+</html>

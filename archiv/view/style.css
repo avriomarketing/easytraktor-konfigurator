@@ -1,0 +1,545 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* safe center: zentriert wenn Platz da ist, klebt bei Überlauf oben (flex-start)
+     statt mittig — so bleibt die Titelleiste sichtbar und nur unten wird abgeschnitten. */
+  justify-content: safe center;
+  min-height: 100vh;
+  padding: 16px;
+  font-family: 'Manrope', sans-serif;
+}
+
+/* ─── Calculator ────────────────────────────────────────────────── */
+
+.calc {
+  width: 100%;
+  max-width: 555px;
+  /* Flex-Spalte: Header + Body im normalen Fluss -> Karte kennt ihre Inhaltshöhe.
+     Ein Flex-Item schrumpft per Default nicht unter seinen Inhalt (min-height: auto),
+     dadurch wird die frühere harte min-height überflüssig und das Verhalten
+     passt sich responsiv an (Textumbruch auf schmalen Screens). */
+  display: flex;
+  flex-direction: column;
+  background: rgba(64, 64, 64, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.2);
+  overflow: visible;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+/* clip background to border-radius without clipping dropdowns */
+.calc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: rgba(64, 64, 64, 0.4);
+  pointer-events: none;
+}
+
+.calc__header {
+  flex: 0 0 auto;
+  background: #1b1b1b;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  z-index: 1;
+}
+
+.calc__title {
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 27px;
+  letter-spacing: -0.54px;
+  color: #ffffff;
+}
+
+.calc__body {
+  flex: 1 1 auto;
+  /* ersetzt die alten absoluten Offsets: 15px oben (Abstand unter Header),
+     25px seitlich, 17px unten */
+  padding: 1rem 25px 2.5rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+/* ─── Labels ────────────────────────────────────────────────────── */
+
+.calc__label {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 27px;
+  color: #d4d4d4;
+  display: block;
+  margin-top: 10px;
+}
+
+.calc__label--section {
+  font-weight: 700;
+  color: #bcbcbc;
+  margin-top: 16px;
+}
+
+/* ─── Manufacturer Buttons ──────────────────────────────────────── */
+
+.calc__manufacturers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.calc__manufacturer {
+  height: 60px;
+  border-radius: 64px;
+  border: 2px solid transparent;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 6px 12px;
+  transition: border-color 0.15s;
+}
+
+.calc__manufacturer--active {
+  border-color: #ee7500;
+}
+
+.calc__manufacturer--inactive {
+  border-color: #ddd;
+  opacity: 0.3;
+}
+
+.calc__manufacturer img {
+  max-width: 100%;
+  max-height: 44px;
+  object-fit: contain;
+}
+
+/* ─── Dropdowns ─────────────────────────────────────────────────── */
+
+.calc__dropdown {
+  position: relative;
+  margin-top: 6px;
+}
+
+.calc__dropdown-trigger {
+  height: 41px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 64px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.calc__dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.calc__dropdown-value {
+  font-weight: 400;
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.calc__dropdown-value--bold {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.calc__dropdown-arrow {
+  color: #ffffff;
+  font-size: 11px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.calc__dropdown.is-open .calc__dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.calc__dropdown-list {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 100;
+  list-style: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.calc__dropdown.is-open .calc__dropdown-list {
+  display: block;
+}
+
+.calc__dropdown-item {
+  padding: 10px 18px;
+  font-size: 15px;
+  color: #d4d4d4;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.calc__dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.calc__dropdown-item--selected {
+  color: #ee7500;
+  font-weight: 600;
+}
+
+/* Pill variant (Mietstart/Mietende) */
+.calc__dropdown--pill {
+  margin-top: 4px;
+}
+
+.calc__dropdown--pill .calc__dropdown-trigger {
+  height: 40.5px;
+}
+
+/* ─── Date grid ─────────────────────────────────────────────────── */
+
+.calc__dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.calc__date-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.calc__date-group .calc__label {
+  margin-top: 8px;
+}
+
+/* ─── Sliders ───────────────────────────────────────────────────── */
+
+.calc__slider-group {
+  margin-top: 14px;
+}
+
+.calc__slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.calc__slider-header .calc__label {
+  margin-top: 0;
+}
+
+.calc__slider-value {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 27px;
+  color: #ffffff;
+}
+
+.calc__slider-track {
+  position: relative;
+  height: 12px;
+}
+
+/* Native range input styled to match */
+.calc__range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 12px;
+  border-radius: 10px;
+  background: linear-gradient(
+    to right,
+    #ee7500 0%,
+    #ee7500 var(--pct, 50%),
+    rgba(255, 255, 255, 0.4) var(--pct, 50%),
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.calc__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ee7500;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.calc__range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ee7500;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+}
+
+/* ─── Checkboxes ────────────────────────────────────────────────── */
+
+.calc__checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+
+.calc__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 27px;
+  color: #d4d4d4;
+  cursor: pointer;
+}
+
+.calc__checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.calc__checkbox-box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid #b8c1c9;
+  border-radius: 4.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.calc__checkbox-box::after {
+  content: '';
+  display: none;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #ffffff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.calc__checkbox-input:checked + .calc__checkbox-box {
+  background: #ee7500;
+  border-color: #ee7500;
+}
+
+.calc__checkbox-input:checked + .calc__checkbox-box::after {
+  display: block;
+}
+
+/* ─── Info Tooltip ──────────────────────────────────────────────── */
+
+.calc__info-tip {
+  position: relative;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #ee7500;
+  border-radius: 11px;
+  color: #ee7500;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  user-select: none;
+}
+
+.calc__tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  background: #1b1b1b;
+  border: 1px solid rgba(238, 117, 0, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #d4d4d4;
+  white-space: normal;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* arrow pointing down toward the icon */
+.calc__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1b1b1b;
+}
+
+.calc__info-tip:hover .calc__tooltip {
+  display: block;
+}
+
+/* ─── Price ─────────────────────────────────────────────────────── */
+
+.calc__price-section {
+  /* Preis-Block + Button nach unten verankern; der flexible Abstand
+     entsteht dadurch zwischen Checkboxen und Preis-Block. */
+  margin-top: auto;
+}
+
+.calc__price-label {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 27px;
+  color: #ffffff;
+}
+
+.calc__price-value {
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 43.2px;
+  color: #ffffff;
+}
+
+.calc__price-sub {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 27px;
+  color: #d4d4d4;
+}
+
+/* ─── CTA Button ────────────────────────────────────────────────── */
+
+.calc__cta {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  margin-top: 10px;
+  background: #ee7500;
+  border: 1px solid #ee7500;
+  border-radius: 40px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #ffffff;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.calc__cta:hover {
+  background: #d96a00;
+  border-color: #d96a00;
+}
+
+.calc__cta-arrow {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.calc__notes {
+  width: 100%;
+  max-width: 555px;
+  margin: 26px 0 0;
+  padding: 0 4px;
+}
+
+.calc__note {
+  margin: 0 0 6px;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* ─── Desktop/Tablet: Höhenverhalten ────────────────────────────────
+   Ab hier greift die viewport-gebundene Höhe (Lücke einklappen, dann
+   Größe halten und aus dem Viewport ragen). Darunter (Mobil) bleibt die
+   Karte auf natürlicher Inhaltshöhe und die Seite scrollt normal.
+   Der untere Höhen-Boden ergibt sich automatisch aus dem Inhalt
+   (Flex min-height: auto) und ist damit responsiv. */
+@media (min-width: 640px) {
+  html, body {
+    height: 100%;
+  }
+  body {
+    padding: 32px;
+  }
+  .calc {
+    height: 100%;
+    /* Ab 640px ist die Karte immer 555px breit (max-width gekappt) -> der Inhalt
+       bricht nicht um, die Inhaltshöhe ist konstant ~811px. Daher hier eine feste
+       Untergrenze: Karte schrumpft bis hierher (Lücke weg), dann hält sie die Größe
+       und ragt aus dem Viewport, statt den Inhalt zu beschneiden. */
+    min-height: 850px;
+    max-height: 880px;
+  }
+}
+
+/* ─── Schmale Screens: Checkboxen einspaltig ────────────────────────
+   Verhindert, dass die Info-Icons aus der Karte ragen, wenn zwei
+   Checkboxen samt Tooltip nicht nebeneinander passen. */
+@media (max-width: 520px) {
+  .calc__checkboxes {
+    grid-template-columns: 1fr;
+  }
+}

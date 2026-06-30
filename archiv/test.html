@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webflow-Simulation</title>
+  <style>
+    /* "Webflow-Seite" drumherum — Default-Styling, muss UNberührt bleiben */
+    body { margin: 0; font-family: Georgia, serif; background: #fff; color: #111; }
+    .page-nav { background: #143; color: #fff; padding: 20px; font-size: 22px; }
+    .page-section { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .page-section h1 { font-size: 40px; margin: 0 0 16px; }
+    .page-section p { line-height: 1.6; }
+    .page-bg { background: #6b5; padding: 60px 20px; }
+    .page-footer { background: #222; color: #aaa; padding: 30px; text-align: center; }
+  </style>
+  <!-- so würde der <link> in Webflow im Page-Head stehen (hier: dist = CDN-Payload) -->
+  <link rel="stylesheet" href="../dist/konfigurator.css">
+</head>
+<body>
+  <nav class="page-nav">Webflow-Nav (muss serifenschrift + grün bleiben)</nav>
+
+  <div class="page-section">
+    <h1>Überschrift der Seite</h1>
+    <p>Dieser Text und die Abstände hier dürfen sich durch das eingebettete CSS
+       NICHT verändern (Test fürs Scoping). Listenpunkte:</p>
+    <ul><li>Punkt eins</li><li>Punkt zwei</li></ul>
+    <button>Normaler Webflow-Button</button>
+  </div>
+
+  <!-- Konfigurator-Sektion (in-flow), z.B. mit Hintergrundbild -->
+  <div class="page-bg">
+    <!-- ===== HTML-Embed: nur das leere Wrapper-div, JS injiziert das Markup ===== -->
+    <div class="et-konfigurator"></div>
+    <!-- ===== Ende Embed-Inhalt ===== -->
+  </div>
+
+  <div class="page-section">
+    <p>Weiterer Seiteninhalt nach dem Konfigurator — bleibt normal.</p>
+  </div>
+  <footer class="page-footer">Webflow-Footer</footer>
+
+  <!-- so würde der <script> in Webflow im Page-Footer stehen (hier lokal) -->
+  <script src="../dist/easytraktor-konfigurator.js"></script>
+</body>
+</html>
