@@ -67,3 +67,29 @@ In der Preistabelle sind die beiden Fahrzeuge **inkonsistent geschrieben**:
 **Zwischenlösung:** Anlage exakt wie in der Tabelle. Korrektur später rein
 redaktionell möglich — **Achtung:** eine Änderung des *Slugs* würde bestehende
 Links auf die Detailseite brechen, der *Name* allein ist unkritisch.
+
+---
+
+## 4. Texte und Bildmaterial zu den beiden neuen Geräten liefern
+*(erfasst 2026-08-17)*
+
+**Frage:** Wer liefert Redaktionsinhalte und Fotos für `TLT35-26 4x4 Diesel` und
+`TLT 35-22 2WD Elektro`?
+
+**Hintergrund:** Die beiden Teletraks liegen in der Fahrzeuge-Collection und
+werden deshalb — wie alle anderen Fahrzeuge — **automatisch** in den Fahrzeug-
+Slidern der Website ausgegeben und erhalten eine Detailseite unter
+`/produkte/<slug>` (auf die auch der Datenblatt-Button im Konfigurator zeigt).
+
+**Gebraucht wird pro Fahrzeug:**
+
+| CMS-Feld | Anforderung |
+|---|---|
+| `Foto` | quadratisch, weißer Hintergrund, idealerweise `.webp` (`.jpg` ok, `.png` vermeiden) |
+| `Kurzbeschreibung` | max. 80 Zeichen (Teaser auf der Slider-Karte) |
+| `Beschreibung` | RichText |
+| `Technische Daten` | RichText |
+
+**Zwischenlösung:** Die Fahrzeuge können ohne diese Inhalte angelegt werden —
+der **Konfigurator funktioniert vollständig**, aber Slider-Karte und Detailseite
+bleiben inhaltlich unvollständig (Platzhalter/leere Bereiche).
