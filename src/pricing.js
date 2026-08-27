@@ -112,7 +112,73 @@
     return { sumHour, sumMonth };
   }
 
-  const Pricing = { calculatePrice, nf2, roundUpCents, SELBSTBEHALT_AUFSCHLAG };
+  /**
+   * Preisberechnung für die TELETRAK-Variante (Teleskoplader TLT).
+   * ===================================================================
+   * BEWUSST eine eigene Funktion — `calculatePrice()` oben ist cent-genau gegen
+   * das alte PHP-System verifiziert und wird nicht angefasst.
+   *
+   * Zwei fachliche Unterschiede zur Standardformel:
+   *
+   *  1) Die Betriebsstunden sind hier bereits PRO MONAT angegeben. Der
+   *     Monatspreis ist deshalb `sumHour × stundenProMonat` — es wird NICHT
+   *     durch die Mietdauer geteilt.
+   *
+   *  2) KEIN roundUpCents(): Der ceil-auf-Float-Quirk in der Standardformel
+   *     existiert nur, um die Preise der Bestandstraktoren cent-genau mit dem
+   *     TYPO3-Altsystem übereinstimmen zu lassen. Die Teletraks wurden dort nie
+   *     kalkuliert — es gibt also keine Kompatibilität zu wahren, und der Quirk
+   *     würde nur einen Rundungsfehler erben. Gegengerechnet: in 3 von 108
+   *     Kombinationen erzeugt er einen sichtbar falschen Preis (z. B.
+   *     125 h/Monat, 36 Mon., SB 1.000 € → 20,11 statt 20,10 €/h).
+   *
+   * @param {object} tractor  Fahrzeug aus der Datenquelle (braucht `preise` je Stufe)
+   * @param {object} opts
+   * @param {number|string} opts.stundenProMonat   Stufe, z. B. 100 (Slider-WERT, nicht der Index)
+   * @param {number} opts.dauerMonate              Mietdauer 12 | 24 | 36
+   * @param {number} [opts.zusatzAufschlag=0]      Summe der €/h-Aufschläge der gewählten Anbaugeräte
+   * @param {number} [opts.selbstbehaltIndex=1]    0 = 1000€ (+0,20/h) | 1 = 2500€ (+0/h)
+   * @returns {{ sumHour: number, sumMonth: number } | null}
+   */
+  function calculatePriceTeletrak(tractor, opts) {
+    if (!tractor || !tractor.mietbetriebsstunden || !opts) return null;
+
+    const {
+      stundenProMonat,
+      dauerMonate,
+      zusatzAufschlag = 0,
+      selbstbehaltIndex = 1,
+    } = opts;
+
+    const stufe = tractor.mietbetriebsstunden[String(stundenProMonat)];
+    if (!stufe || !Array.isArray(stufe.preise)) return null;
+
+    // Dauerstufe -> Index in der Preisliste: 12 Mon. -> 0, 24 -> 1, 36 -> 2
+    const idx = Math.round(Number(dauerMonate) / 12) - 1;
+    if (!Number.isFinite(idx) || idx < 0 || idx >= stufe.preise.length) return null;
+
+    const basis = stufe.preise[idx];
+    if (typeof basis !== 'number' || !Number.isFinite(basis)) return null;
+
+    const stunden = Number(stundenProMonat);
+    if (!Number.isFinite(stunden) || stunden <= 0) return null;
+
+    const sbAufschlag = SELBSTBEHALT_AUFSCHLAG[selbstbehaltIndex] || 0;
+    const aufschlag = Number(zusatzAufschlag) || 0;
+
+    const sumHour = nf2(basis + aufschlag + sbAufschlag);
+    const sumMonth = nf2(sumHour * stunden);
+
+    return { sumHour, sumMonth };
+  }
+
+  const Pricing = {
+    calculatePrice,
+    calculatePriceTeletrak,
+    nf2,
+    roundUpCents,
+    SELBSTBEHALT_AUFSCHLAG,
+  };
 
   // UMD-leicht: window.Pricing (Webflow Embed) + CommonJS (Node-Tests)
   if (typeof module !== 'undefined' && module.exports) {

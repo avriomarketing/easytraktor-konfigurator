@@ -1,5 +1,31 @@
 # Spec — Teletrak-Variante (Konfigurator v2)
 
+> ## ▶ UMSETZUNGSSTAND (2026-08-27)
+> **Code fertig und lokal verifiziert. CMS angelegt. Designer-Arbeiten offen.**
+>
+> **Erledigt (Claude):**
+> - CMS-Felder angelegt: `konfigurator-variante` (Option), `preise-75-h-teletrak-exklusiv`,
+>   `preise-100-h-teletrak-exklusiv`, `preise-125-h-teletrak-exklusiv`,
+>   `preisaufschlag-gestaffelt-teletrak-exklusiv`. `preise-200-h` umbenannt
+>   (Slug unverändert → keine Bindung betroffen).
+> - 4 Anbaugeräte angelegt (`Preisaufschlag` leer, nur Staffel gefüllt).
+> - 2 Fahrzeuge angelegt — **beide mit `Aktiv = AUS`**, damit sie nicht in der
+>   Live-Datenliste erscheinen können.
+> - Code: Provider, zweite Preisformel, Template, Controller. Am E2E-Fixture
+>   verifiziert: Preismatrix 9/9 deckungsgleich, Anbaugeräte-Staffel korrekt je
+>   Dauer, Rundungs-Fix greift, Variantenwechsel in beide Richtungen, Hidden
+>   Fields für beide Varianten, Standard-Fahrzeuge rechnerisch unverändert.
+>
+> **Noch zu tun (User):**
+> 1. Designer: Marker-Div `et-variante-teletrak` + Attribute `data-preise-75/-100/-125`
+>    und `data-preis-staffel` (siehe Abschnitt 3).
+> 2. Typeform: URL-Parameter `mietdauer` anlegen.
+> 3. Die beiden Fahrzeuge auf `Aktiv = an` setzen, **wenn** auf Staging getestet wird.
+>    ⚠️ Solange die Live-Domain noch `@v1.0.0` einbindet, dürfen die Fahrzeuge nicht
+>    auf der Live-Domain publiziert aktiv sein — der alte Code kennt sie nicht und
+>    hätte für sie keine Preisdaten.
+> 4. Redaktionsinhalte/Fotos → OFFENE-FRAGEN.md #4
+
 Vollständige Umsetzungs-Spezifikation, abgestimmt 2026-08-17.
 Branch: `v2-teletrak` · Live-Rollback-Anker: Tag `v1.0.0` (Commit `a11e5f2`)
 

@@ -54,6 +54,13 @@
   const SELBSTBEHALT = [1000, 2500];  // EUR-Stufen
   const TYPEFORM_ID = 'tyctUmUQ';     // Angebots-Formular (Popup)
 
+  // ── Teletrak-Variante (Teleskoplader TLT) ─────────────────────────────
+  // Kein saisonales Fenster: Mietdauern von 1–3 Jahren laufen zwangsläufig über
+  // Dezember/Januar und über den Jahreswechsel. Stattdessen ein rollierendes
+  // Startfenster ab dem Folgemonat.
+  const TELETRAK_DAUERN = [12, 24, 36];   // Monate (Reihenfolge = Index in der Preisliste)
+  const TELETRAK_START_MONATE = 12;       // Länge des rollierenden Startfensters
+
   const eur = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // ── Laufzeit-Zustand ──────────────────────────────────────────────────
@@ -65,14 +72,18 @@
     stundenTiers: [],   // verfügbare Stundenstufen des Modells, z. B. [300,500,750,...]
     stundenIndex: 0,
     selbstbehaltIndex: 1,
+    // Maske + Preislogik des gewählten Fahrzeugs: 'standard' | 'teletrak'.
+    // null = noch nicht angewandt (erzwingt applyVariante beim ersten Modell).
+    variante: null,
     // Datumsfenster — werden in computeDateWindow() aus dem aktuellen
-    // Europe/Berlin-Datum abgeleitet (Defaults hier nur Platzhalter).
-    displayYear: 0,        // anzuzeigendes Jahr (laufendes oder Folgejahr)
-    earliestStartIdx: 1,   // frühester wählbarer Start-Monatsindex
-    latestStartIdx: 8,     // spätester wählbarer Start (September)
-    lastEndIdx: 10,        // spätestes Ende (November)
-    startIndex: 1,
-    endIndex: 3,
+    // Europe/Berlin-Datum abgeleitet. Monate sind ABSOLUTE Monatsnummern
+    // (jahr * 12 + monatIndex), damit ein rollierendes Fenster problemlos über
+    // den Jahreswechsel laufen kann und jeder Eintrag sein eigenes Jahr trägt.
+    startOptions: [],      // wählbare Startmonate (absolute Monatsnummern)
+    startAbs: 0,           // gewählter Mietstart
+    endAbs: 0,             // gewähltes Mietende (nur Standard-Variante)
+    lastEndAbs: 0,         // spätestes Ende (nur Standard-Variante = November)
+    dauerMonate: 12,       // gewählte Mietdauer (nur Teletrak-Variante)
   };
 
   // ── DOM-Referenzen ────────────────────────────────────────────────────
@@ -112,6 +123,10 @@
       datasheet: root.querySelector('[data-datasheet]'),
       startDd: root.querySelector('[data-dropdown="start"]'),
       endDd: root.querySelector('[data-dropdown="end"]'),
+      dauerDd: root.querySelector('[data-dropdown="dauer"]'),
+      dauerLabel: root.querySelector('[data-label="dauer"]'),
+      stundenLabel: root.querySelector('[data-label="stunden"]'),
+      variantGroups: root.querySelectorAll('[data-variant-group]'),
       stunden: root.querySelector('[data-slider="stunden"]'),
       stundenVal: root.querySelector('[data-slider-value="stunden"]'),
       selbst: root.querySelector('[data-slider="selbstbehalt"]'),
@@ -128,19 +143,18 @@
       ? await TraktorRepository.getHersteller()
       : {};
 
-    computeDateWindow();   // Anzeigejahr + wählbare Start-/Endmonate aus heutigem Datum
-
     setupDropdownToggles();
     setupBrandButtons();
     setupSliders();
     setupExtras();
     setupCta();
-    renderDateDropdowns();
 
     // Gesperrte Marken (Hersteller „Aktiv" = aus) ausgrauen + nicht klickbar
     applyBrandAvailability();
 
-    // Erstauswahl: erste VERFÜGBARE Marke + erstes Modell
+    // Erstauswahl: erste VERFÜGBARE Marke + erstes Modell.
+    // selectFirstModel() -> selectModel() -> applyVariante() baut die
+    // Datums-Dropdowns passend zur Variante des gewählten Fahrzeugs auf.
     pickInitialBrand();
     renderModelDropdown();
     selectFirstModel();
@@ -282,11 +296,41 @@
       else dom.datasheet.removeAttribute('href');
     }
 
+    // Variante des Fahrzeugs -> Maske + Preislogik umschalten.
+    // Nur bei echtem Wechsel, damit die Auswahl beim Wechsel zwischen zwei
+    // Fahrzeugen derselben Variante erhalten bleibt.
+    const variante = tractor.variante === 'teletrak' ? 'teletrak' : 'standard';
+    if (variante !== state.variante) {
+      state.variante = variante;
+      applyVariante();
+    }
+
     // Stunden-Stufen des Modells übernehmen
     state.stundenTiers = Object.keys(tractor.mietbetriebsstunden)
       .map(Number).filter((n) => !Number.isNaN(n)).sort((a, b) => a - b);
     configureStundenSlider();
     renderExtras(tractor);
+  }
+
+  // Schaltet die Bedienmaske auf die aktuelle Variante um: passende Feldgruppen
+  // einblenden, Labels anpassen, Datumsfenster neu berechnen und Dropdowns neu
+  // aufbauen. Ein Template mit ein-/ausblendbaren Gruppen — kein Template-Tausch,
+  // damit Listener und Zustand der übrigen Bedienelemente erhalten bleiben.
+  function applyVariante() {
+    const v = state.variante;
+
+    dom.variantGroups.forEach((el) => {
+      el.style.display = (el.getAttribute('data-variant-group') === v) ? '' : 'none';
+    });
+
+    if (dom.stundenLabel) {
+      dom.stundenLabel.textContent = (v === 'teletrak')
+        ? 'Mietbetriebsstunden pro Monat:'
+        : 'Mietbetriebsstunden:';
+    }
+
+    computeDateWindow();
+    renderDateDropdowns();
   }
 
   // ── Datums-Dropdowns ──────────────────────────────────────────────────
@@ -305,86 +349,141 @@
     return { year: year, month: month };
   }
 
-  // Leitet Anzeigejahr + wählbares Start-/Endfenster aus dem heutigen Datum ab.
-  // Regeln: Start echt nach dem aktuellen Monat; bis August -> laufendes Jahr,
-  // ab September -> Folgejahr (dann volle Liste Feb–Sep). Start Feb…Sep, Ende
-  // Start+2…Nov, alles im selben Jahr.
+  // Absolute Monatsnummer <-> Jahr/Monat. Damit lässt sich rechnen (Monate
+  // addieren), ohne Jahresübergänge gesondert behandeln zu müssen.
+  function absOf(year, monthIdx) { return year * 12 + monthIdx; }
+  function monthLabel(abs) { return MONTHS[abs % 12] + ' ' + Math.floor(abs / 12); }
+
+  // Leitet das wählbare Datumsfenster aus dem heutigen Datum ab — je Variante:
+  //
+  //  STANDARD (Traktoren): saisonal. Fenster Feb–Nov, Start Feb–Sep, Ende
+  //    Start+2…Nov, alles im selben Kalenderjahr. Start echt nach dem aktuellen
+  //    Monat; bis August laufendes Jahr, ab September Folgejahr.
+  //
+  //  TELETRAK (Teleskoplader): rollierend. Die nächsten 12 Monate ab dem
+  //    Folgemonat, kein saisonales Fenster (Mietdauern von 1–3 Jahren laufen
+  //    ohnehin über Dezember/Januar und über den Jahreswechsel).
   function computeDateWindow() {
     const now = nowBerlin();
-    const currentMonthIdx = now.month - 1;            // 0-basiert
+    const nowAbs = absOf(now.year, now.month - 1);
+    state.startOptions = [];
+
+    if (state.variante === 'teletrak') {
+      for (let i = 1; i <= TELETRAK_START_MONATE; i++) state.startOptions.push(nowAbs + i);
+      state.startAbs = state.startOptions[0];
+      state.dauerMonate = TELETRAK_DAUERN[0];
+      return;
+    }
+
     // Anzeigejahr: aktueller Monat <= August -> laufend, sonst Folgejahr.
-    state.displayYear = (now.month <= 8) ? now.year : (now.year + 1);
+    const displayYear = (now.month <= 8) ? now.year : (now.year + 1);
     // Frühester Start: im laufenden Jahr echt nach aktuellem Monat (min. Februar);
     // im Folgejahr volle Liste ab Februar.
-    state.earliestStartIdx = (state.displayYear === now.year)
-      ? Math.max(FEB_IDX, currentMonthIdx + 1)
-      : FEB_IDX;
-    state.latestStartIdx = SEP_IDX;
-    state.lastEndIdx = NOV_IDX;
-    // Defaults: frühester Start, Ende = Start + 2.
-    state.startIndex = state.earliestStartIdx;
-    state.endIndex = state.startIndex + MIN_MIETDAUER;
+    const firstIdx = (displayYear === now.year) ? Math.max(FEB_IDX, now.month) : FEB_IDX;
+    for (let i = firstIdx; i <= SEP_IDX; i++) state.startOptions.push(absOf(displayYear, i));
+    state.lastEndAbs = absOf(displayYear, NOV_IDX);
+    state.startAbs = state.startOptions[0];
+    state.endAbs = state.startAbs + MIN_MIETDAUER;   // Default: Ende = Start + 2
   }
 
   function renderDateDropdowns() {
     renderStartOptions();
-    renderEndOptions();
+    if (state.variante === 'teletrak') renderDauerOptions();
+    else renderEndOptions();
   }
 
   function renderStartOptions() {
     const list = dom.startDd.querySelector('.calc__dropdown-list');
     list.innerHTML = '';
-    // Startmonate: frühester gültiger … spätester Start (September).
-    for (let i = state.earliestStartIdx; i <= state.latestStartIdx; i++) {
-      list.appendChild(makeMonthItem(i, () => {
-        state.startIndex = i;
-        setDropdownValue(dom.startDd, monthLabel(i));
-        markSelected(list, i);
-        // Mietende ggf. nachziehen (mind. Start + 2)
-        if (state.endIndex < i + MIN_MIETDAUER) state.endIndex = i + MIN_MIETDAUER;
-        renderEndOptions();
+    state.startOptions.forEach((abs) => {
+      list.appendChild(makeMonthItem(abs, () => {
+        state.startAbs = abs;
+        setDropdownValue(dom.startDd, monthLabel(abs));
+        markSelected(list, abs);
+        if (state.variante === 'teletrak') {
+          paintDauerLabel();          // Enddatum im Label nachziehen
+        } else {
+          // Mietende ggf. nachziehen (mind. Start + 2)
+          if (state.endAbs < abs + MIN_MIETDAUER) state.endAbs = abs + MIN_MIETDAUER;
+          renderEndOptions();
+        }
         closeDropdown(dom.startDd);
         recalc();
       }));
-    }
-    setDropdownValue(dom.startDd, monthLabel(state.startIndex));
-    markSelected(list, state.startIndex);
+    });
+    setDropdownValue(dom.startDd, monthLabel(state.startAbs));
+    markSelected(list, state.startAbs);
   }
 
   function renderEndOptions() {
     const list = dom.endDd.querySelector('.calc__dropdown-list');
     list.innerHTML = '';
     // Endmonate: Start + 2 … November.
-    const first = state.startIndex + MIN_MIETDAUER;
-    const last = state.lastEndIdx;
-    for (let i = first; i <= last; i++) {
-      list.appendChild(makeMonthItem(i, () => {
-        state.endIndex = i;
-        setDropdownValue(dom.endDd, monthLabel(i));
-        markSelected(list, i);
+    for (let abs = state.startAbs + MIN_MIETDAUER; abs <= state.lastEndAbs; abs++) {
+      list.appendChild(makeMonthItem(abs, () => {
+        state.endAbs = abs;
+        setDropdownValue(dom.endDd, monthLabel(abs));
+        markSelected(list, abs);
         closeDropdown(dom.endDd);
         recalc();
       }));
     }
-    setDropdownValue(dom.endDd, monthLabel(state.endIndex));
-    markSelected(list, state.endIndex);
+    setDropdownValue(dom.endDd, monthLabel(state.endAbs));
+    markSelected(list, state.endAbs);
   }
 
-  function makeMonthItem(index, onClick) {
+  // Teletrak: Mietdauer statt Mietende. Das Label darüber zeigt das errechnete
+  // Enddatum, damit der Kunde die konkrete Rückgabe sieht.
+  function renderDauerOptions() {
+    if (!dom.dauerDd) return;
+    const list = dom.dauerDd.querySelector('.calc__dropdown-list');
+    list.innerHTML = '';
+    TELETRAK_DAUERN.forEach((monate) => {
+      const li = document.createElement('li');
+      li.className = 'calc__dropdown-item';
+      li.setAttribute('data-month-index', String(monate));
+      li.textContent = dauerLabel(monate);
+      li.addEventListener('click', () => {
+        state.dauerMonate = monate;
+        setDropdownValue(dom.dauerDd, dauerLabel(monate));
+        markSelected(list, monate);
+        paintDauerLabel();
+        closeDropdown(dom.dauerDd);
+        recalc();
+      });
+      list.appendChild(li);
+    });
+    setDropdownValue(dom.dauerDd, dauerLabel(state.dauerMonate));
+    markSelected(list, state.dauerMonate);
+    paintDauerLabel();
+  }
+
+  function dauerLabel(monate) { return monate + ' Monate'; }
+
+  // Enddatum = 1. des Mietstart-Monats + Mietdauer, z. B. „01.03.2028".
+  function endDateStr() {
+    const abs = state.startAbs + state.dauerMonate;
+    const monat = (abs % 12) + 1;
+    return '01.' + (monat < 10 ? '0' : '') + monat + '.' + Math.floor(abs / 12);
+  }
+
+  function paintDauerLabel() {
+    if (dom.dauerLabel) dom.dauerLabel.textContent = 'Mietdauer (Ende: ' + endDateStr() + ')';
+  }
+
+  function makeMonthItem(abs, onClick) {
     const li = document.createElement('li');
     li.className = 'calc__dropdown-item';
-    li.setAttribute('data-month-index', String(index));
-    li.textContent = monthLabel(index);
+    li.setAttribute('data-month-index', String(abs));
+    li.textContent = monthLabel(abs);
     li.addEventListener('click', onClick);
     return li;
   }
 
-  function monthLabel(i) { return MONTHS[i] + ' ' + state.displayYear; }
-
-  function markSelected(list, index) {
+  function markSelected(list, value) {
     list.querySelectorAll('.calc__dropdown-item').forEach((li) => {
       li.classList.toggle('calc__dropdown-item--selected',
-        li.getAttribute('data-month-index') === String(index));
+        li.getAttribute('data-month-index') === String(value));
     });
   }
 
@@ -479,11 +578,28 @@
 
   // Summe der €/h-Aufschläge: alle angehakten Checkboxen (serienmäßige sind
   // immer checked+disabled und damit automatisch enthalten).
+  //
+  // Teletrak: Anbaugeräte sind mietdauerabhängig bepreist. Hat ein Gerät eine
+  // Staffel (3 Werte für 12/24/36 Monate), gilt der Wert zur gewählten Dauer;
+  // sonst greift der Einzelwert. Damit bleiben alle Bestandsausstattungen, die
+  // keine Staffel haben, unverändert.
   function extrasAufschlag() {
     if (!dom.extrasContainer) return 0;
+    const tractor = state.allData[state.model] || {};
+    const dauerIdx = TELETRAK_DAUERN.indexOf(state.dauerMonate);
     let sum = 0;
     dom.extrasContainer.querySelectorAll('.calc__checkbox-input').forEach((cb) => {
-      if (cb.checked) sum += Number(cb.getAttribute('data-preis')) || 0;
+      if (!cb.checked) return;
+      let preis = Number(cb.getAttribute('data-preis')) || 0;
+      if (state.variante === 'teletrak' && dauerIdx >= 0) {
+        const ex = (tractor.extras || [])
+          .find((e) => e.key === cb.getAttribute('data-extra-key'));
+        const staffel = ex && ex.preisStaffel;
+        if (Array.isArray(staffel) && typeof staffel[dauerIdx] === 'number') {
+          preis = staffel[dauerIdx];
+        }
+      }
+      sum += preis;
     });
     return sum;
   }
@@ -515,13 +631,22 @@
     const tractor = state.allData[state.model];
     if (!tractor) return;
 
-    const result = Pricing.calculatePrice(tractor, {
-      mietbetriebsstunden: state.stundenTiers[state.stundenIndex],
-      // INKLUSIVE Mietdauer wie PHP: (mietende − mietstart) + 1
-      mietdauer: (state.endIndex - state.startIndex) + 1,
-      zusatzAufschlag: extrasAufschlag(),
-      selbstbehaltIndex: state.selbstbehaltIndex,
-    });
+    // Je Variante ein eigener Rechenpfad. Die Standardformel bleibt unangetastet
+    // (cent-genau gegen das alte PHP-System verifiziert).
+    const result = (state.variante === 'teletrak')
+      ? Pricing.calculatePriceTeletrak(tractor, {
+        stundenProMonat: state.stundenTiers[state.stundenIndex],
+        dauerMonate: state.dauerMonate,
+        zusatzAufschlag: extrasAufschlag(),
+        selbstbehaltIndex: state.selbstbehaltIndex,
+      })
+      : Pricing.calculatePrice(tractor, {
+        mietbetriebsstunden: state.stundenTiers[state.stundenIndex],
+        // INKLUSIVE Mietdauer wie PHP: (mietende − mietstart) + 1
+        mietdauer: (state.endAbs - state.startAbs) + 1,
+        zusatzAufschlag: extrasAufschlag(),
+        selbstbehaltIndex: state.selbstbehaltIndex,
+      });
 
     if (!result) return;
     // Nur die reine Zahl in den <span data-output> schreiben — der umgebende
@@ -539,11 +664,18 @@
   // Baut das Hidden-Field-Objekt (Typeform „Variables") aus dem aktuellen Zustand.
   function buildHiddenFields() {
     const tractor = state.allData[state.model] || {};
+    const teletrak = (state.variante === 'teletrak');
+    const stunden = String(state.stundenTiers[state.stundenIndex] || '');
     const hidden = {
       miete_modell: tractor.label || state.model || '',
-      miete_betriebsstunden: String(state.stundenTiers[state.stundenIndex] || ''),
-      miete_start: monthLabel(state.startIndex),
-      miete_ende: monthLabel(state.endIndex),
+      // Bei Teletraks sind es Stunden PRO MONAT — im Angebot kenntlich machen,
+      // sonst ist der Wert für den Vertrieb nicht eindeutig lesbar.
+      miete_betriebsstunden: teletrak ? (stunden + ' pro Monat') : stunden,
+      miete_start: monthLabel(state.startAbs),
+      // Standard: Endmonat. Teletrak: errechnetes Enddatum (z. B. 01.03.2028).
+      miete_ende: teletrak ? endDateStr() : monthLabel(state.endAbs),
+      // Nur bei Teletraks gefüllt; leere Werte werden aus der URL gefiltert.
+      mietdauer: teletrak ? dauerLabel(state.dauerMonate) : '',
       miete_selbstbehalt: SELBSTBEHALT[state.selbstbehaltIndex] + ' EUR',
       mietpreis_probetriebsstunde: dom.outHour ? dom.outHour.textContent : '',
       mietpreis_promonat: dom.outMonth ? dom.outMonth.textContent : '',

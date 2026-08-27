@@ -86,9 +86,21 @@
             <ul class="calc__dropdown-list"></ul>
           </div>
         </div>
-        <div class="calc__date-group">
+        <!-- Standard-Variante: Mietende als Kalendermonat -->
+        <div class="calc__date-group" data-variant-group="standard">
           <label class="calc__label">Mietende</label>
           <div class="calc__dropdown calc__dropdown--pill" data-dropdown="end">
+            <div class="calc__dropdown-trigger" data-dropdown-trigger>
+              <span class="calc__dropdown-value">–</span>
+              <span class="calc__dropdown-arrow">&#9660;</span>
+            </div>
+            <ul class="calc__dropdown-list"></ul>
+          </div>
+        </div>
+        <!-- Teletrak-Variante: Mietdauer in Monaten, Label zeigt das errechnete Enddatum -->
+        <div class="calc__date-group" data-variant-group="teletrak">
+          <label class="calc__label" data-label="dauer">Mietdauer</label>
+          <div class="calc__dropdown calc__dropdown--pill" data-dropdown="dauer">
             <div class="calc__dropdown-trigger" data-dropdown-trigger>
               <span class="calc__dropdown-value">–</span>
               <span class="calc__dropdown-arrow">&#9660;</span>
@@ -102,7 +114,7 @@
       <div class="calc__slider-group">
         <div class="calc__slider-header">
           <span class="calc__slider-label">
-            <span class="calc__label">Mietbetriebsstunden:</span>
+            <span class="calc__label" data-label="stunden">Mietbetriebsstunden:</span>
             <span class="calc__info-tip">
               i
               <span class="calc__tooltip">Jede weitere Mietstunde wird gemäß der vereinbarten Mietbedingungen abgerechnet.</span>

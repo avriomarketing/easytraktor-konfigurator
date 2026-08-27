@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DOM-Provider E2E-Test</title>
   <style> body { margin:0; background:#3a3a3a; padding:24px; } </style>
-  <link rel="stylesheet" href="../dist/konfigurator.css?v=tf12">
+  <link rel="stylesheet" href="../dist/konfigurator.css?v=tf13">
 </head>
 <body>
 
@@ -73,6 +73,23 @@
       </div>
     </div>
 
+    <!-- TELETRAK-Variante: Marker-Div statt Attribut (wie in Webflow via
+         Conditional Visibility). Stunden = PRO MONAT, Preise = 12/24/36 Monate.
+         data-preis ist leer, weil bei diesen Geräten nur die Staffel gefüllt ist. -->
+    <div class="et-fahrzeug" data-name="TLT35-26 4x4 Diesel" data-slug="tlt35-26-4x4-diesel" data-hersteller="JCB"
+         data-preise-75="33.9,31.9,29.9"
+         data-preise-100="26.9,24.9,22.9"
+         data-preise-125="23.9,21.9,19.9">
+      <div class="et-variante-teletrak"></div>
+      <div class="et-serie"></div>
+      <div class="et-optional">
+        <div class="et-extra" data-key="schaufel-1" data-preis="" data-preis-staffel="1.5,0.9,0.6"><div class="et-label">1. Schaufel</div></div>
+        <div class="et-extra" data-key="schaufel-2" data-preis="" data-preis-staffel="1.9,1.2,0.8"><div class="et-label">2. Schaufel</div></div>
+        <div class="et-extra" data-key="zinkenverstellgeraet" data-preis="" data-preis-staffel="3.0,1.6,1.1"><div class="et-label">Zinkenverstellgerät</div></div>
+        <div class="et-extra" data-key="drehgeraet" data-preis="" data-preis-staffel="8.3,4.2,2.9"><div class="et-label">Drehgerät</div></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Hersteller-Status (versteckt) — simuliert die Webflow-Hersteller-Liste.
@@ -88,6 +105,6 @@
   <!-- Konfigurator-Mount (Markup injiziert das Bundle selbst) -->
   <div class="et-konfigurator"></div>
 
-  <script src="../dist/easytraktor-konfigurator.js?v=tf12"></script>
+  <script src="../dist/easytraktor-konfigurator.js?v=tf13"></script>
 </body>
 </html>

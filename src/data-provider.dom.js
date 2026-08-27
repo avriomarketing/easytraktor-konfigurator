@@ -22,7 +22,12 @@
 (function (global) {
   'use strict';
 
-  var HOUR_TIERS = [200, 300, 500, 750, 1000, 1250];
+  // Stundenstufen, für die ein `data-preise-<stufe>` gelesen wird.
+  // 75/100/125 = Betriebsstunden PRO MONAT (Teletrak-Variante),
+  // 200–1250 = Gesamt-Betriebsstunden (Standard/Traktoren).
+  // Fehlt oder ist ein Attribut leer, wird die Stufe einfach nicht angeboten —
+  // die beiden Sätze stören sich also nicht.
+  var HOUR_TIERS = [75, 100, 125, 200, 300, 500, 750, 1000, 1250];
   var DETAIL_BASE = '/produkte/'; // Slug-Basis der Fahrzeuge-Collection-Detailseiten
 
   // "21,9" oder "21.9" -> 21.9 ; ungültig -> null
@@ -32,13 +37,22 @@
     return isNaN(v) ? null : v;
   }
 
-  // CSV (8 Werte, Mietdauer 2–9 Mon.) -> month-price-Array mit führenden [0,0].
-  // Leeres/fehlendes Feld -> null (Stufe wird nicht angeboten).
-  function parsePreise(csv) {
+  // CSV -> Array von Zahlen. Leeres/fehlendes Feld -> null.
+  function parseCsvNums(csv) {
     if (!csv || !String(csv).trim()) return null;
     var parts = String(csv).split(',').map(num).filter(function (v) { return v !== null; });
-    if (!parts.length) return null;
-    return [0, 0].concat(parts);
+    return parts.length ? parts : null;
+  }
+
+  // Variante des Fahrzeugs: bestimmt Maske + Preislogik im Konfigurator.
+  // Webflow kann Option-Felder NICHT an ein Custom Attribute binden (gleiche
+  // Einschränkung wie beim Switch), daher primär über einen Marker-Div mit
+  // Conditional Visibility. `data-variante` wird zusätzlich unterstützt, falls
+  // der Wert doch mal als Text-Attribut geliefert wird.
+  function readVariante(el) {
+    if (el.querySelector('.et-variante-teletrak')) return 'teletrak';
+    var v = (el.getAttribute('data-variante') || '').trim().toLowerCase();
+    return v === 'teletrak' ? 'teletrak' : 'standard';
   }
 
   function parseExtras(scope, serie) {
@@ -51,6 +65,9 @@
         key: (el.getAttribute('data-key') || '').trim(),
         label: labelEl ? labelEl.textContent.trim() : '',
         preis: num(el.getAttribute('data-preis')) || 0,
+        // Mietdauer-abhängige Aufschläge (Teletrak): 3 Werte für 12/24/36 Monate.
+        // null = es gilt der Einzelwert aus `preis`.
+        preisStaffel: parseCsvNums(el.getAttribute('data-preis-staffel')),
         info: infoEl ? infoEl.innerHTML.trim() : '',
         serie: !!serie,
       });
@@ -70,8 +87,15 @@
 
       var mb = {};
       HOUR_TIERS.forEach(function (t) {
-        var mp = parsePreise(el.getAttribute('data-preise-' + t));
-        if (mp) mb[String(t)] = { 'month-price': mp };
+        var vals = parseCsvNums(el.getAttribute('data-preise-' + t));
+        if (vals) {
+          mb[String(t)] = {
+            // Standard-Pfad: Index = Mietdauer − 1 (führende [0,0] wie in der alten JSON)
+            'month-price': [0, 0].concat(vals),
+            // Teletrak-Pfad: rohe Werte, Index = Dauerstufe (12→0, 24→1, 36→2)
+            'preise': vals,
+          };
+        }
       });
 
       var extras = parseExtras(el.querySelector('.et-serie'), true)
@@ -82,6 +106,7 @@
         label: name,
         brand: brand,
         link: slug ? DETAIL_BASE + slug : '',
+        variante: readVariante(el),
         mietbetriebsstunden: mb,
         extras: extras,
       };
