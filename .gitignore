@@ -1,2 +1,5 @@
 .DS_Store
 *.log
+
+# Kundendokumente nicht ins öffentliche Repo
+*.xlsx
