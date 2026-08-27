@@ -5,6 +5,30 @@ Umsetzung läuft solange mit der jeweils genannten **Zwischenlösung** weiter.
 
 ---
 
+## ⚠️ 0. BEKANNTES LIVE-PROBLEM — bewusst zurückgestellt (2026-08-27)
+
+**Zustand:** Auf `easytraktor.de` sind die beiden Teletraks aktiv und im
+gerenderten HTML, die Seite lädt aber weiterhin `@v1.0.0`. Der alte Code kennt
+die Variante nicht und findet für sie keine Preisdaten → beim Klick auf JCB wird
+ein Teletrak vorausgewählt und der **Preis des zuvor gewählten Fahrzeugs
+stehengelassen** (nachgebaut mit dem echten v1.0.0-Bundle: 17,40 €/h ·
+5.800,00 €/Monat, also John-Deere-Preise für einen Teleskoplader).
+
+**Ursache:** `Aktiv` ist ein globaler CMS-Schalter — Live und Staging brauchen
+hier aber unterschiedliche Zustände.
+
+**Vom User bewusst zurückgestellt** (2026-08-27) — nicht vergessen, wird mit dem
+Go-Live ohnehin aufgelöst.
+
+**Zwei fertige Lösungswege, wenn es angegangen wird:**
+1. *Sofort, kein Code:* beide Teletraks auf `Aktiv = aus`, dann **nur** auf die
+   Live-Domain publizieren. Staging behält seinen Build mit den Fahrzeugen.
+2. *Strukturell:* `v1.0.1` auf `master` — Fahrzeuge ohne jegliche Preisdaten
+   werden nicht im Dropdown angeboten. Danach ignoriert der Live-Code die
+   Teletraks unabhängig vom Aktiv-Schalter; Live und Staging sind entkoppelt.
+
+---
+
 ## 1. Anzeigenamen der Schaufeln (Teletrak-Anbaugeräte)
 *(erfasst 2026-08-17)*
 
