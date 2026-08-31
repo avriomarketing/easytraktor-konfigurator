@@ -30,7 +30,14 @@ Go-Live ohnehin aufgelöst.
 ---
 
 ## 1. Anzeigenamen der Schaufeln (Teletrak-Anbaugeräte)
-*(erfasst 2026-08-17)*
+*(erfasst 2026-08-17 · TEILWEISE GEKLÄRT 2026-08-31)*
+
+> **Kunde liefert:** „Gr. Schaufel" = Universalschaufel mit 1 cbm Inhalt · „Kl. Schaufel" =
+> Universalschaufel mit 0,6 cbm Inhalt.
+> **NOCH OFFEN:** Welcher Preis gehört zu welcher Schaufel? Die Spaltenreihenfolge der
+> Preistabelle (1. Schaufel = 0,90 / 2. Schaufel = 1,20) und die Reihenfolge der neuen
+> Namensliste (Gr. vor Kl.) widersprechen der Preislogik (größere Schaufel müsste mehr
+> kosten). Muss beim Kunden bestätigt werden, bevor umbenannt wird.
 
 **Frage:** Wie sollen die beiden Schaufeln im Konfigurator heißen?
 
@@ -51,8 +58,11 @@ Umbenennung später jederzeit im CMS möglich (rein redaktionell, kein Code).
 
 ---
 
-## 2. Selbstbehalt bei den Teletraks — dauerhaft so?
-*(erfasst 2026-08-17)*
+## 2. Selbstbehalt bei den Teletraks — dauerhaft so?  ✅ GEKLÄRT
+*(erfasst 2026-08-17 · geklärt 2026-08-31)*
+
+> **Antwort Kunde:** „Der Selbstbehalt bleibt bei 1.000 / 2.500 €." Keine Änderung nötig,
+> Umsetzung bleibt wie sie ist.
 
 **Frage:** Bleibt die Selbstbehalt-Auswahl (1.000 € / 2.500 €, Aufschlag
 +0,20 €/h bei 1.000 €) bei den Teletraks langfristig unverändert?
@@ -70,8 +80,12 @@ Sliders für die Teletrak-Variante — überschaubarer Aufwand.
 
 ---
 
-## 3. Schreibweise der Modellnamen
-*(erfasst 2026-08-17 — von Claude ergänzt, weil noch ungeklärt)*
+## 3. Schreibweise der Modellnamen  ✅ GEKLÄRT
+*(erfasst 2026-08-17 · geklärt 2026-08-31)*
+
+> **Offizielle Bezeichnungen laut Kunde:** `JCB Teletruk TLT 35-26D 4x4` und
+> `JCB Teletruk TLT 35-22E 2WD`. Im CMS als Name eingetragen (2026-08-31);
+> Slugs bewusst unverändert gelassen, damit keine Links brechen.
 
 **Frage:** Wie lauten die exakten, kundenseitig gewünschten Modellnamen?
 
@@ -113,6 +127,10 @@ Slidern der Website ausgegeben und erhalten eine Detailseite unter
 | `Kurzbeschreibung` | max. 80 Zeichen (Teaser auf der Slider-Karte) |
 | `Beschreibung` | RichText |
 | `Technische Daten` | RichText |
+
+> **Status 2026-08-31:** Beschreibung, Technische Daten (Musterkonfiguration) und
+> Kurzbeschreibung sind eingepflegt. **Fotos fehlen weiterhin** — Kunde schreibt
+> „aktuell leider nicht höherauflösend verfügbar", Bilder lagen der Mail bei.
 
 **Zwischenlösung:** Die Fahrzeuge können ohne diese Inhalte angelegt werden —
 der **Konfigurator funktioniert vollständig**, aber Slider-Karte und Detailseite
