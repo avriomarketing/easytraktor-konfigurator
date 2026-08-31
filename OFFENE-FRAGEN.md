@@ -29,15 +29,25 @@ Go-Live ohnehin aufgelöst.
 
 ---
 
-## 1. Anzeigenamen der Schaufeln (Teletrak-Anbaugeräte)
-*(erfasst 2026-08-17 · TEILWEISE GEKLÄRT 2026-08-31)*
+## 1. Anzeigenamen der Schaufeln (Teletrak-Anbaugeräte)  ✅ GEKLÄRT
+*(erfasst 2026-08-17 · geklärt 2026-08-31)*
 
-> **Kunde liefert:** „Gr. Schaufel" = Universalschaufel mit 1 cbm Inhalt · „Kl. Schaufel" =
-> Universalschaufel mit 0,6 cbm Inhalt.
-> **NOCH OFFEN:** Welcher Preis gehört zu welcher Schaufel? Die Spaltenreihenfolge der
-> Preistabelle (1. Schaufel = 0,90 / 2. Schaufel = 1,20) und die Reihenfolge der neuen
-> Namensliste (Gr. vor Kl.) widersprechen der Preislogik (größere Schaufel müsste mehr
-> kosten). Muss beim Kunden bestätigt werden, bevor umbenannt wird.
+> **Umgesetzt 2026-08-31:**
+>
+> | CMS-Name | Tooltip | Preise 12/24/36 Mon. | Slug (= data-key) |
+> |---|---|---|---|
+> | Kleine Schaufel | Universalschaufel mit 0,6 m³ Inhalt | 1,50 / 0,90 / 0,60 | `schaufel-1` |
+> | Große Schaufel | Universalschaufel mit 1,0 m³ Inhalt | 1,90 / 1,20 / 0,80 | `schaufel-2` |
+>
+> **Zuordnungs-Entscheidung:** Die Vorlagen waren widersprüchlich — Spaltenreihenfolge der
+> Preistabelle (1. Schaufel = 0,90) gegen Reihenfolge der Namensliste (Gr. vor Kl.).
+> Entschieden wurde nach Preislogik: die größere Schaufel ist die teurere.
+> **Falls das doch falsch ist:** nur die beiden Namen und Tooltips tauschen — die Preise
+> bleiben an ihren Items, weil die Staffel dort hängt.
+>
+> Anzeigenamen ausgeschrieben statt „Gr./Kl." bzw. „ZVG", damit sie für Endkunden
+> verständlich sind. Einheit als m³ statt cbm, konsistent zu den Bestands-Tooltips.
+> Slugs bewusst unverändert (sind das `data-key` im gerenderten HTML).
 
 **Frage:** Wie sollen die beiden Schaufeln im Konfigurator heißen?
 
