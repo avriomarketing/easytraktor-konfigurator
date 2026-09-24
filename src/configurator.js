@@ -517,8 +517,21 @@
     // Default je Modell: zweithöchste Stufe (wie alte Seite)
     state.stundenIndex = Math.max(0, maxIdx - 1);
     dom.stunden.value = state.stundenIndex;
+    reserveStundenWidth();
     paintStundenValue();
     paintTrack(dom.stunden);
+  }
+
+  // Wertanzeige neben dem Label auf die breiteste Stufe des Modells festlegen.
+  // Sonst ändert sie beim Ziehen ihre Breite (z. B. „75" → „100"), das Label
+  // daneben bricht je nach Wert mal um und mal nicht, und alles darunter springt
+  // um eine Zeile. Auf schmalen iPhones (375 px) rutscht der Slider dadurch unter
+  // dem Finger weg. Ziffern sind per CSS gleich breit (tabular-nums), daher
+  // reicht die Stellenzahl der längsten Stufe (+ etwas Luft für Schriftmetrik).
+  function reserveStundenWidth() {
+    if (!dom.stundenVal) return;
+    const stellen = Math.max(...state.stundenTiers.map((t) => String(t).length));
+    dom.stundenVal.style.minWidth = (stellen + 0.5) + 'ch';
   }
 
   function paintStundenValue() {

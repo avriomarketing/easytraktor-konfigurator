@@ -167,7 +167,11 @@
 }
 
 .calc__dropdown-trigger {
-  height: 38px;
+  /* min-height statt height: bricht der Text auf schmalen Screens um
+     (z. B. „September 2027", lange Modellnamen), wächst die Pille mit,
+     statt dass zwei Zeilen in 38 px gequetscht werden. Einzeilig unverändert. */
+  min-height: 38px;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.4);
   border-radius: 64px;
   padding: 0 18px;
@@ -187,6 +191,9 @@
   font-weight: 400;
   font-size: 15px;
   color: #ffffff;
+  line-height: 1.25;
+  padding: 4px 0;
+  min-width: 0;
 }
 
 .calc__dropdown-arrow {
@@ -243,7 +250,7 @@
 }
 
 .calc__dropdown--pill .calc__dropdown-trigger {
-  height: 40.5px;
+  min-height: 40.5px;
 }
 
 /* ─── Date grid ─────────────────────────────────────────────────── */
@@ -258,6 +265,9 @@
 .calc__date-group {
   display: flex;
   flex-direction: column;
+  /* Pillen unten bündig: bricht ein Label um (z. B. „Mietdauer (Ende: …)"
+     auf schmalen Screens), stehen die beiden Dropdowns trotzdem auf einer Höhe. */
+  justify-content: flex-end;
 }
 
 .calc__date-group .calc__label {
@@ -295,6 +305,12 @@
   font-size: 15px;
   line-height: 27px;
   color: #ffffff;
+  /* Gleich breite Ziffern + rechtsbündig: die Anzeige behält beim Ziehen ihre
+     Breite, das Label daneben bricht nicht je nach Wert mal um und mal nicht.
+     Die Mindestbreite je Modell setzt der Controller (reserveStundenWidth). */
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .calc__slider-track {
@@ -631,6 +647,12 @@
 @media (max-width: 479px) {
   .calc__checkboxes {
     grid-template-columns: 1fr;
+  }
+
+  /* Etwas weniger Innenabstand in den Pillen: mehr Platz für Monatsnamen
+     und Modellbezeichnungen, damit sie seltener umbrechen. */
+  .calc__dropdown-trigger {
+    padding: 0 14px;
   }
 
   .calc__price-section {
