@@ -489,13 +489,17 @@
 
   // ── Slider ────────────────────────────────────────────────────────────
   function setupSliders() {
-    if (dom.stunden) dom.stunden.addEventListener('input', () => {
-      state.stundenIndex = Number(dom.stunden.value);
-      paintStundenValue();
-      paintTrack(dom.stunden);
-      recalc();
-    });
+    if (dom.stunden) {
+      dom.stunden.addEventListener('input', () => {
+        state.stundenIndex = Number(dom.stunden.value);
+        paintStundenValue();
+        paintTrack(dom.stunden);
+        recalc();
+      });
+      enableTouchSlider(dom.stunden);
+    }
     if (dom.selbst) {
+      enableTouchSlider(dom.selbst);
       dom.selbst.min = 0; dom.selbst.max = SELBSTBEHALT.length - 1; dom.selbst.step = 1;
       dom.selbst.value = state.selbstbehaltIndex;
       dom.selbst.addEventListener('input', () => {
@@ -532,6 +536,71 @@
     if (!dom.stundenVal) return;
     const stellen = Math.max(...state.stundenTiers.map((t) => String(t).length));
     dom.stundenVal.style.minWidth = (stellen + 0.5) + 'ch';
+  }
+
+  // ── Touch-Bedienung der Slider (iPhone/iPad/Android) ────────────────
+  // Auf iOS reagiert ein <input type="range"> nur, wenn der Finger exakt den
+  // runden Knopf trifft (18 px, berührbar sogar nur 18 × 12 px) — ein Tipp auf
+  // die Leiste bewirkt nichts. Verfehlt man den Knopf, wirkt der Slider
+  // „eingefroren" (Kundenmeldung 09/2026: „Knopf plötzlich nicht mehr anfassbar").
+  //
+  // Auf Touch-Geräten übernimmt deshalb die Slider-Zeile selbst (Prinzip der
+  // Bibliothek „RangeTouch"):
+  //   - Antippen irgendwo auf der Zeile  -> Wert springt an die Fingerposition
+  //   - waagerecht ziehen                -> Wert folgt dem Finger
+  //   - senkrecht wischen                -> Seite scrollt wie gewohnt, Wert bleibt
+  // Die Tippfläche ist per CSS größer als die sichtbare Leiste (@media
+  // (pointer: coarse)), das native Input nimmt dort keine Berührungen an —
+  // sonst reagierten beide Mechanismen gleichzeitig. Maus + Tastatur bleiben
+  // unverändert beim nativen Slider.
+  const THUMB_PX = 18;       // Knopfbreite laut CSS (.calc__range::-webkit-slider-thumb)
+  const GESTE_PX = 8;        // Bewegung, ab der aus einem Tipp eine Geste wird
+
+  function enableTouchSlider(input) {
+    const zone = input.closest('.calc__slider-track');
+    if (!zone) return;
+    let touch = null;        // { x, y, modus: 'offen' | 'ziehen' | 'scrollen' }
+
+    // Fingerposition -> nächstgelegene Stufe (gleiche Geometrie wie der native Slider:
+    // der Knopfmittelpunkt läuft von THUMB_PX/2 bis Breite − THUMB_PX/2).
+    function setFromX(clientX) {
+      const r = input.getBoundingClientRect();
+      const min = Number(input.min) || 0;
+      const max = Number(input.max) || 0;
+      if (max <= min || r.width <= THUMB_PX) return;
+      const anteil = Math.min(1, Math.max(0, (clientX - r.left - THUMB_PX / 2) / (r.width - THUMB_PX)));
+      const wert = String(Math.round(min + anteil * (max - min)));
+      if (wert !== input.value) {
+        input.value = wert;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+
+    zone.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { touch = null; return; }
+      touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, modus: 'offen' };
+    }, { passive: true });
+
+    zone.addEventListener('touchmove', (e) => {
+      if (!touch || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      if (touch.modus === 'offen') {
+        const dx = Math.abs(t.clientX - touch.x);
+        const dy = Math.abs(t.clientY - touch.y);
+        if (dx < GESTE_PX && dy < GESTE_PX) return;
+        touch.modus = (dx > dy) ? 'ziehen' : 'scrollen';
+      }
+      if (touch.modus === 'ziehen') {
+        e.preventDefault();          // beim waagerechten Ziehen die Seite nicht mitscrollen
+        setFromX(t.clientX);
+      }
+    }, { passive: false });
+
+    zone.addEventListener('touchend', () => {
+      if (touch && touch.modus === 'offen') setFromX(touch.x);   // einfacher Tipp
+      touch = null;
+    });
+    zone.addEventListener('touchcancel', () => { touch = null; });
   }
 
   function paintStundenValue() {

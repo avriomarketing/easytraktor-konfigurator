@@ -318,6 +318,27 @@
   height: 10px;
 }
 
+/* Touch-Geräte: Die Slider-Zeile ist die Tippfläche (Bedienung per JS,
+   enableTouchSlider) — deutlich größer als die 12 px hohe Leiste: 12 px links/
+   rechts, 16 px nach unten, nur 3 px nach oben (darüber sitzt das ⓘ-Symbol).
+   Padding und negativer Margin heben sich auf, das Layout bleibt gleich.
+   Das native Input nimmt hier keine Berührungen an, sonst reagierten beide. */
+@media (pointer: coarse) {
+  .calc__slider-track {
+    height: 29px;               /* 10 px Leiste + 3 px oben + 16 px unten */
+    padding: 3px 12px 16px;
+    margin: -3px -12px -16px;
+    touch-action: pan-y;        /* senkrechtes Wischen scrollt weiter die Seite */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .calc__range {
+    pointer-events: none;
+  }
+}
+
 /* Native range input styled to match */
 .calc__range {
   -webkit-appearance: none;
