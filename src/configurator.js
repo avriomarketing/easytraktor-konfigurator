@@ -467,8 +467,15 @@
     return '01.' + (monat < 10 ? '0' : '') + monat + '.' + Math.floor(abs / 12);
   }
 
+  // „(Ende: …)" steht in einem eigenen Span, damit ihn das CSS auf schmalen
+  // Screens ausblenden kann — dort bräche das Label sonst zweizeilig um.
   function paintDauerLabel() {
-    if (dom.dauerLabel) dom.dauerLabel.textContent = 'Mietdauer (Ende: ' + endDateStr() + ')';
+    if (!dom.dauerLabel) return;
+    dom.dauerLabel.textContent = 'Mietdauer';
+    const ende = document.createElement('span');
+    ende.className = 'calc__label-ende';
+    ende.textContent = ' (Ende: ' + endDateStr() + ')';
+    dom.dauerLabel.appendChild(ende);
   }
 
   function makeMonthItem(abs, onClick) {

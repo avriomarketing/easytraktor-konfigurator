@@ -660,7 +660,24 @@
 }
 
 @media (max-width: 767px) {
+  /* Teletrak: „(Ende: …)" im Mietdauer-Label ausblenden. Das Label bricht
+     sonst bis ca. 510 px Breite zweizeilig um. Das Enddatum geht weiterhin
+     ins Anfrageformular (miete_ende). */
+  .calc__label-ende {
+    display: none;
+  }
 
+  /* Checkboxen etwas größer; der Haken ist per Flexbox zentriert. */
+  .calc__checkbox-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+  }
+
+  .calc__checkbox-box::after {
+    width: 6px;
+    height: 10px;
+  }
 }
 
 
@@ -674,6 +691,15 @@
      und Modellbezeichnungen, damit sie seltener umbrechen. */
   .calc__dropdown-trigger {
     padding: 0 14px;
+  }
+
+  /* Modellname im geschlossenen Dropdown einzeilig halten. „…" erscheint nur,
+     wenn der Name wirklich nicht passt (z. B. Teletruks unter 390 px);
+     sonst steht er vollständig da. Die Liste zeigt immer die vollen Namen. */
+  .calc__dropdown[data-dropdown="model"] .calc__dropdown-value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .calc__price-section {
