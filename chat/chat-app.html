@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EasyTraktor Assistent</title>
+  <!--
+    Chat-Oberfläche des EasyTraktor Assistenten. Läuft im iframe, das
+    easytraktor-chat.js beim ersten Öffnen erzeugt (srcdoc) — dadurch bleibt
+    das Chat-Design vom Seiten-Design getrennt.
+
+    Grundlage: index.html des TYPO3-Chats. Geändert gegenüber dem Original:
+      - Schrift Manrope statt Google-Font „Inter", eingebettet beim Build
+        (kein externer Abruf)
+      - Verlauf wird beim Laden nicht mehr erneut gespeichert (verdoppelte sich)
+      - Layout füllt das Fenster vollständig (auch mobil im Vollbild)
+      - Schließen-Button im Kopf, ESC schließt auch innerhalb des Chats
+      - keine Debug-Ausgaben in der Konsole, verständliche Fehlermeldungen
+      - Speicher-Schlüssel mit Präfix „et-chat-", Markenfarbe #EE7500
+      - Touch-Geräte: 16 px Eingabeschrift (sonst zoomt iOS), kein Enter-Hinweis
+  -->
+  <style>
+    /*__MANROPE_FONT_FACE__*/
+
+    :root {
+      --bg: #0b0d10;
+      --bg-soft: #111418;
+      --card: rgba(255,255,255,0.06);
+      --text: #eef2f6;
+      --muted: #9aa4b2;
+      --brand: #EE7500;
+      --brand-700: #d46800;
+      --ring: rgba(238, 117, 0, 0.35);
+      --bot: rgba(255,255,255,0.08);
+      --user-grad-1: #f5922e;
+      --user-grad-2: #EE7500;
+      --scrollbar: rgba(255,255,255,0.15);
+      --line: rgba(255,255,255,0.08);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #fff8f0;
+        --bg-soft: #fff1e6;
+        --card: #ffffff;
+        --text: #20262d;
+        --muted: #5a6675;
+        --bot: #f3f4f6;
+        --scrollbar: rgba(0,0,0,0.2);
+        --line: rgba(0,0,0,0.08);
+      }
+    }
+    [data-theme="light"] {
+      --bg: #fff8f0;
+      --bg-soft: #fff1e6;
+      --card: #ffffff;
+      --text: #20262d;
+      --muted: #5a6675;
+      --bot: #f3f4f6;
+      --scrollbar: rgba(0,0,0,0.2);
+      --line: rgba(0,0,0,0.08);
+    }
+    [data-theme="dark"] {
+      --bg: #0b0d10;
+      --bg-soft: #111418;
+      --card: rgba(255,255,255,0.06);
+      --text: #eef2f6;
+      --muted: #9aa4b2;
+      --bot: rgba(255,255,255,0.08);
+      --scrollbar: rgba(255,255,255,0.15);
+      --line: rgba(255,255,255,0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 800px at 10% -10%, rgba(238, 117, 0, 0.12), transparent 50%),
+        radial-gradient(1000px 600px at 90% 110%, rgba(238, 117, 0, 0.10), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Füllt das Fenster: Kopf und Eingabe fest, Nachrichten dazwischen scrollbar */
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+    }
+
+    .header {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 14px 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent);
+      border-bottom: 1px solid var(--line);
+    }
+    .title { display: flex; gap: 12px; align-items: center; font-weight: 700; letter-spacing: 0.2px; }
+    .logo {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--user-grad-1), var(--user-grad-2));
+      box-shadow: 0 8px 22px -10px var(--ring);
+    }
+    .status { display: inline-flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 500; color: var(--muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 999px; background: #2ecc71; box-shadow: 0 0 0 6px rgba(46, 204, 113, 0.15); }
+
+    .toolbar { display: flex; gap: 4px; align-items: center; }
+    .icon-btn {
+      appearance: none; border: 0; background: transparent; color: var(--muted);
+      padding: 8px; border-radius: 10px; cursor: pointer; display: grid; place-items: center;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .icon-btn:focus-visible, .send-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+    .chat {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex; flex-direction: column; gap: 12px;
+      overflow-y: auto; padding: 20px; scroll-behavior: smooth;
+      overscroll-behavior: contain;
+    }
+    .chat::-webkit-scrollbar { width: 8px; }
+    .chat::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 999px; }
+
+    .row { display: flex; gap: 10px; align-items: flex-end; }
+    .row.user { justify-content: flex-end; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 10px; flex: 0 0 32px; display: grid; place-items: center;
+      background: var(--bg-soft); color: var(--muted); border: 1px solid var(--line);
+    }
+    .stack { max-width: 100%; min-width: 0; }
+    .bubble {
+      max-width: min(75vw, 600px);
+      padding: 10px 14px; border-radius: 16px; position: relative;
+      line-height: 1.45; font-size: 15px;
+      box-shadow: 0 10px 25px -18px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06) inset;
+      animation: pop 160ms ease-out;
+      overflow-wrap: anywhere; white-space: pre-wrap;
+    }
+    .row.user .bubble { color: #fff; background: linear-gradient(135deg, var(--user-grad-1), var(--user-grad-2)); }
+    .row.bot .bubble { background: var(--bot); }
+    .row.hinweis .bubble { background: transparent; box-shadow: 0 0 0 1px var(--line) inset; color: var(--muted); }
+    .meta { font-size: 11px; color: var(--muted); margin-top: 4px; user-select: none; }
+    .row.user .meta { text-align: right; }
+
+    @keyframes pop { from { transform: translateY(6px) scale(.98); opacity: 0 } to { transform: translateY(0) scale(1); opacity: 1 } }
+
+    .composer {
+      flex: 0 0 auto;
+      padding: 14px; display: grid; grid-template-columns: 1fr auto; gap: 10px;
+      border-top: 1px solid var(--line);
+      background: linear-gradient(0deg, rgba(255,255,255,0.06), transparent);
+    }
+    .input {
+      display: flex; gap: 10px; align-items: center; background: var(--card);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 10px 12px;
+      box-shadow: 0 1px 0 0 rgba(255,255,255,0.05) inset;
+      min-width: 0;
+    }
+    textarea {
+      resize: none; border: 0; outline: 0; background: transparent; color: var(--text);
+      font: 500 15px 'Manrope', system-ui, sans-serif; width: 100%; max-height: 200px;
+    }
+    textarea::placeholder { color: var(--muted); }
+    .send-btn {
+      appearance: none; border: 0; cursor: pointer; border-radius: 12px;
+      background: linear-gradient(135deg, var(--user-grad-1), var(--user-grad-2)); color: #fff;
+      padding: 12px 16px; font: 600 15px 'Manrope', system-ui, sans-serif; letter-spacing: .2px;
+      display: inline-flex; align-items: center; gap: 8px;
+      box-shadow: 0 10px 24px -12px var(--ring);
+      transition: transform .06s ease, box-shadow .2s ease;
+    }
+    .send-btn[disabled] { opacity: .6; cursor: not-allowed; box-shadow: none; }
+    .send-btn:hover:not([disabled]) { transform: translateY(-1px); box-shadow: 0 16px 30px -14px var(--ring); }
+
+    /* Tipp-Animation — eigene Klasse, damit der grüne Status-Punkt nicht mithüpft */
+    .typing { display: inline-flex; gap: 6px; align-items: center; }
+    .typing-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); opacity: .6; animation: pulse 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: .2s }
+    .typing-dot:nth-child(3) { animation-delay: .4s }
+    @keyframes pulse { 0% { opacity: .2; transform: translateY(0) } 50% { opacity: .8; transform: translateY(-2px) } 100% { opacity: .2; transform: translateY(0) } }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+      padding: 6px 10px; border-radius: 999px; font-size: 12px; color: var(--muted);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+    }
+    .kbd { font-variant-numeric: lining-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    .footer-note { flex: 0 0 auto; text-align: center; color: var(--muted); font-size: 12px; padding: 0 12px 12px; }
+
+    /* Touch-Geräte (Handy, Tablet):
+       - 16 px Eingabeschrift, sonst zoomt iOS beim Antippen ins Feld
+       - kein „↵ zum Senden"-Hinweis (Shift+Enter gibt es dort nicht)
+       Bewusst per pointer statt Bildschirmbreite: Media Queries messen im
+       iframe die Fensterbreite, nicht die des Geräts. */
+    @media (pointer: coarse) {
+      textarea { font-size: 16px; }
+      .pill { display: none; }
+    }
+    /* Schmales Fenster: Senden-Button nur als Symbol */
+    @media (max-width: 420px) {
+      .send-label { display: none; }
+      .send-btn { padding: 12px 14px; }
+      .chat { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="EasyTraktor Assistent">
+    <header class="header">
+      <div class="title">
+        <div class="logo" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 14c0-3.866 3.134-7 7-7h4a7 7 0 1 1-7 7H3z" fill="white" opacity=".9"/>
+            <path d="M6 14a5 5 0 0 1 5-5h2a5 5 0 1 1-5 5H6z" fill="#000" opacity=".15"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:16px">EasyTraktor Assistent</div>
+          <div class="status" aria-live="polite"><span class="status-dot"></span> Verbunden</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="icon-btn" id="themeToggle" type="button" title="Hell/Dunkel umschalten" aria-label="Hell/Dunkel umschalten">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1zm0 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8-5a1 1 0 0 1 1 1 1 1 0 1 1-1-1zM4 12a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm15.657-6.657a1 1 0 1 1-1.414 1.414 1 1 0 0 1 1.414-1.414zM6.757 18.364a1 1 0 1 1-1.414 1.415 1 1 0 0 1 1.414-1.415zM20 20a1 1 0 0 1-1.707.707l-1.414-1.414A1 1 0 1 1 18.293 18.3L19.707 19.7A1 1 0 0 1 20 20zM6.121 4.707A1 1 0 0 1 4.707 6.12 1 1 0 1 1 6.12 4.707z"/></svg>
+        </button>
+        <button class="icon-btn" id="closeBtn" type="button" title="Chat schließen" aria-label="Chat schließen">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="chat" class="chat" aria-live="polite" aria-relevant="additions"></main>
+
+    <div class="composer">
+      <div class="input">
+        <label class="sr-only" for="message">Nachricht</label>
+        <textarea id="message" rows="1" autocomplete="off"></textarea>
+        <span class="pill"><span class="kbd">↵</span> zum Senden</span>
+      </div>
+      <button class="send-btn" id="sendBtn" type="button" aria-label="Senden">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        <span class="send-label">Senden</span>
+      </button>
+    </div>
+    <div class="footer-note">KI-Assistent – Antworten werden automatisch generiert.</div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var WEBHOOK_URL = 'https://automat.tec.zone/webhook/2877707c-3b7d-458b-bc3f-398a0eaa25b2';
+
+    // Speicher-Schlüssel mit eigenem Präfix: Die Chat-Seite läuft auf derselben
+    // Domain wie die Website und teilt sich deren localStorage.
+    var KEY_SESSION = 'et-chat-session';
+    var KEY_VERLAUF = 'et-chat-verlauf';
+    var KEY_THEME = 'et-chat-theme';
+    var MAX_VERLAUF = 200;
+    var TOUCH = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+
+    // localStorage kann in privaten Fenstern o. Ä. werfen — der Chat soll dann
+    // trotzdem funktionieren, nur ohne gespeicherten Verlauf.
+    function lesen(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function schreiben(key, wert) { try { localStorage.setItem(key, wert); } catch (e) { /* ohne Speicher weiter */ } }
+
+    // Altlasten des TYPO3-Chats (gleiche Domain, alte Schlüssel) entfernen. Der
+    // alte Verlauf war durch einen Fehler vervielfacht und wird nicht übernommen.
+    // „sessionId" bleibt stehen: zu allgemein, könnte einem anderen Skript gehören.
+    try { localStorage.removeItem('et-chat'); localStorage.removeItem('et-theme'); } catch (e) { /* egal */ }
+
+    // ── Hell/Dunkel ────────────────────────────────────────────────
+    var html = document.documentElement;
+    var themeGespeichert = lesen(KEY_THEME);
+    html.setAttribute('data-theme', /^(light|dark|auto)$/.test(themeGespeichert || '') ? themeGespeichert : 'dark');
+    document.getElementById('themeToggle').addEventListener('click', function () {
+      var jetzt = html.getAttribute('data-theme');
+      var neu = jetzt === 'dark' ? 'light' : jetzt === 'light' ? 'auto' : 'dark';
+      html.setAttribute('data-theme', neu);
+      schreiben(KEY_THEME, neu);
+    });
+
+    // ── Session ────────────────────────────────────────────────────
+    var sessionId = lesen(KEY_SESSION);
+    if (!sessionId) {
+      sessionId = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+      schreiben(KEY_SESSION, sessionId);
+    }
+
+    var chat = document.getElementById('chat');
+    var input = document.getElementById('message');
+    var sendBtn = document.getElementById('sendBtn');
+
+    input.placeholder = TOUCH ? 'Nachricht eingeben…' : 'Nachricht eingeben… (Shift+Enter für Zeilenumbruch)';
+
+    // ── Verlauf ────────────────────────────────────────────────────
+    function verlaufLesen() {
+      try { var v = JSON.parse(lesen(KEY_VERLAUF) || '[]'); return Array.isArray(v) ? v : []; }
+      catch (e) { return []; }
+    }
+    function verlaufSpeichern(text, sender, ts) {
+      var v = verlaufLesen();
+      v.push({ text: text, sender: sender, ts: ts.toISOString() });
+      schreiben(KEY_VERLAUF, JSON.stringify(v.slice(-MAX_VERLAUF)));
+    }
+
+    function uhrzeit(d) {
+      try { return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }
+      catch (e) { return ''; }
+    }
+
+    var ICON_USER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4Z"/></svg>';
+    var ICON_BOT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 4h16v6H4zM4 12h10v8H4z"/></svg>';
+
+    // opts.speichern === false: nicht in den Verlauf schreiben (beim
+    // Wiederherstellen und für Status-/Fehlerhinweise).
+    // opts.hinweis: dezente Darstellung für Status-/Fehlerhinweise.
+    function addMessage(text, sender, opts) {
+      opts = opts || {};
+      var ts = (opts.ts instanceof Date && !isNaN(opts.ts.getTime())) ? opts.ts : new Date();
+
+      var row = document.createElement('div');
+      row.className = 'row ' + sender + (opts.hinweis ? ' hinweis' : '');
+
+      var avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerHTML = sender === 'user' ? ICON_USER : ICON_BOT;
+
+      var bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+
+      var meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = (sender === 'user' ? 'Du' : 'EasyTraktor') + ' • ' + uhrzeit(ts);
+
+      var stack = document.createElement('div');
+      stack.className = 'stack';
+      stack.appendChild(bubble);
+      stack.appendChild(meta);
+
+      if (sender === 'user') { row.appendChild(stack); row.appendChild(avatar); }
+      else { row.appendChild(avatar); row.appendChild(stack); }
+
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+
+      if (opts.speichern !== false) verlaufSpeichern(text, sender, ts);
+    }
+
+    function addTyping() {
+      var row = document.createElement('div');
+      row.className = 'row bot';
+      row.id = 'typing-row';
+      row.innerHTML = '<div class="avatar">' + ICON_BOT + '</div>'
+        + '<div class="bubble"><span class="typing" aria-label="Der Assistent schreibt">'
+        + '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>'
+        + '</span></div>';
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    function removeTyping() {
+      var t = document.getElementById('typing-row');
+      if (t) t.remove();
+    }
+
+    // ── Senden ─────────────────────────────────────────────────────
+    function hinweis(text) { addMessage(text, 'bot', { speichern: false, hinweis: true }); }
+
+    function sendMessage() {
+      var text = input.value.trim();
+      if (!text || sendBtn.disabled) return;
+
+      addMessage(text, 'user');
+      input.value = '';
+      autoResize();
+      sendBtn.disabled = true;
+      addTyping();
+
+      fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, message: text })
+      }).then(function (res) {
+        return res.text().then(function (raw) {
+          var data = null;
+          try { data = JSON.parse(raw); } catch (e) { data = null; }
+          if (Array.isArray(data) && data.length > 0) data = data[0];   // Array-Antwort: erstes Element
+          removeTyping();
+          if (res.ok && data && data.reply) {
+            addMessage(String(data.reply), 'bot');
+          } else if (!res.ok) {
+            hinweis('Da ist gerade etwas schiefgelaufen (Fehler ' + res.status + '). Bitte versuche es in einem Moment noch einmal.');
+          } else {
+            hinweis('Darauf habe ich gerade keine Antwort erhalten. Bitte versuche es noch einmal.');
+          }
+        });
+      }).catch(function () {
+        removeTyping();
+        hinweis('Die Verbindung zum Assistenten ist gerade gestört. Bitte prüfe deine Internetverbindung und versuche es noch einmal.');
+      }).then(function () {
+        sendBtn.disabled = false;
+        chat.scrollTop = chat.scrollHeight;
+      });
+    }
+
+    // Eingabefeld wächst mit dem Text (48–200 px)
+    function autoResize() {
+      input.style.height = 'auto';
+      input.style.height = Math.max(48, Math.min(input.scrollHeight, 200)) + 'px';
+    }
+    input.addEventListener('input', autoResize);
+
+    // Enter sendet, Shift+Enter macht einen Zeilenumbruch
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    sendBtn.addEventListener('click', sendMessage);
+
+    // ── Verbindung zur Website (easytraktor-chat.js) ───────────────
+    // Die Website setzt window.etChatHost = { close } und ruft etChatFocus().
+    function schliessen() {
+      if (window.etChatHost && typeof window.etChatHost.close === 'function') window.etChatHost.close();
+    }
+    document.getElementById('closeBtn').addEventListener('click', schliessen);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') schliessen(); });
+    // Wird aufgerufen, wenn das Fenster bereits sichtbar ist — daher direkt,
+    // ohne auf den nächsten Frame zu warten (der pausiert in Hintergrund-Tabs).
+    window.etChatFocus = function () {
+      autoResize();
+      try { input.focus({ preventScroll: true }); } catch (e) { /* egal */ }
+    };
+
+    // ── Start ──────────────────────────────────────────────────────
+    verlaufLesen().forEach(function (m) {
+      if (m && typeof m.text === 'string') addMessage(m.text, m.sender === 'user' ? 'user' : 'bot', { ts: new Date(m.ts), speichern: false });
+    });
+    if (!chat.children.length) {
+      addMessage('Hallo! Ich bin dein EasyTraktor KI Assistent. Wie kann ich helfen?', 'bot');
+    }
+    autoResize();
+    chat.scrollTop = chat.scrollHeight;
+  })();
+  </script>
+</body>
+</html>
