@@ -8,6 +8,7 @@ Copyright 2018 The Manrope Project Authors (https://github.com/sharanda/manrope)
 Lizenziert unter der **SIL Open Font License 1.1** — https://openfontlicense.org
 Die Schrift darf eingebettet und weitergegeben werden; dieser Hinweis gehört dazu.
 
-Quelle der Datei: Google Fonts (lateinisches Subset). Sie wird beim Build als
-Base64 in `dist/easytraktor-chat.js` eingebettet und zur Laufzeit NICHT von
-extern geladen (kein Kontakt zu Google-Servern beim Seitenbesuch).
+Quelle der Datei: Google Fonts (lateinisches Subset; identisch mit der Datei,
+die Google für Manrope 400/600/700 ausliefert). Sie wird beim Build als Base64 in
+`dist/konfigurator.css` und `dist/easytraktor-chat.js` eingebettet und zur
+Laufzeit NICHT von extern geladen (kein Kontakt zu Google-Servern).

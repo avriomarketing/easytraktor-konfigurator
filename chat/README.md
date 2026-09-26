@@ -19,7 +19,7 @@ Mehr braucht es nicht — Button, Fenster, Styles und Schrift kommen aus der Dat
 |---|---|
 | `chat-app.html` | die Chat-Oberfläche (läuft im iframe). Hier steht auch die `WEBHOOK_URL`. |
 | `chat-launcher.js` | Button, Fenster, Öffnen/Schließen, mobiles Vollbild |
-| `fonts/manrope-latin-wght.woff2` | Manrope (OFL), wird beim Build als Base64 eingebettet |
+| `../fonts/manrope-latin-wght.woff2` | Manrope (OFL), gemeinsam mit dem Konfigurator; wird beim Build als Base64 eingebettet |
 
 `node build.js` erzeugt `dist/easytraktor-chat.js` (und wie bisher den Konfigurator).
 Nie in `dist/` editieren.
