@@ -129,6 +129,3 @@ verfügbar"). Fehlt die Liste, gelten alle Marken als verfügbar.
 | `v2.0.0` | Teletrak-Variante (JCB) |
 | `v2.0.1` – `v2.0.3` | Mobil- und iPhone-Korrekturen (Slider, Labels, Checkboxen) |
 | `v2.0.4` | Schriftaustausch |
-
-Ältere Entwürfe, Testseiten und Projektnotizen sind aus dem aktuellen Stand entfernt,
-liegen aber weiterhin in der Git-Historie (z. B. unter Tag `v2.0.4`).
