@@ -1,8 +1,8 @@
-# easyTRAKTOR Konfigurator & Chat-Assistent
+# easyTRAKTOR Konfigurator
 
-Mietpreis-Konfigurator und Chat-Assistent für [easytraktor.de](https://easytraktor.de)
-(Webflow). Beide werden als fertig gebaute Dateien aus `dist/` über jsDelivr direkt
-aus diesem Repository geladen.
+Mietpreis-Konfigurator für [easytraktor.de](https://easytraktor.de) (Webflow).
+Er wird als fertig gebaute Dateien aus `dist/` über jsDelivr direkt aus diesem
+Repository geladen.
 
 ## Aufbau
 
@@ -13,14 +13,13 @@ aus diesem Repository geladen.
 | `src/template.js` | Markup des Konfigurators |
 | `src/configurator.js` | Steuerung (Auswahl, Slider, Ausgabe) |
 | `src/konfigurator.css` | Styles, auf `.et-konfigurator` begrenzt |
-| `chat/` | Chat-Assistent, eigene Anleitung in [`chat/README.md`](chat/README.md) |
 | `fonts/` | Schrift Manrope, wird eingebettet (kein Abruf bei Google), Lizenz in `fonts/LIZENZ.md` |
-| `build.js` | Baut `dist/` aus `src/`, `chat/` und `fonts/` |
+| `build.js` | Baut `dist/` aus `src/` und `fonts/` |
 | `dist/` | Ausgelieferte Dateien – **nie von Hand bearbeiten**, wird vom Build überschrieben |
 
 ## So bindest du den Konfigurator ein
 
-Für die Einbindung brauchst du nur die drei fertigen Dateien aus `dist/`.
+Für die Einbindung brauchst du nur die zwei fertigen Dateien aus `dist/`.
 Die übrigen Ordner sind Quellcode und nur nötig, wenn du etwas ändern willst.
 
 ### Schritt 1: Dateien bereitstellen
@@ -30,9 +29,9 @@ Wähle einen der beiden Wege:
 - **A) Über jsDelivr (so läuft es aktuell):** Nichts hochladen. Die Dateien werden
   direkt aus dem GitHub-Repository `avriomarketing/easytraktor-konfigurator`
   geladen. Die Adressen stehen in Schritt 3.
-- **B) Auf eigenem Server:** `dist/konfigurator.css`, `dist/easytraktor-konfigurator.js`
-  und `dist/easytraktor-chat.js` auf einen Webserver laden, der sie öffentlich per
-  HTTPS ausliefert. In Schritt 3 und 4 die jsDelivr-Adressen durch die eigenen ersetzen.
+- **B) Auf eigenem Server:** `dist/konfigurator.css` und `dist/easytraktor-konfigurator.js`
+  auf einen Webserver laden, der sie öffentlich per HTTPS ausliefert. In Schritt 3
+  die jsDelivr-Adressen durch die eigenen ersetzen.
 
 ### Schritt 2: Daten im Webflow-CMS anlegen
 
@@ -56,20 +55,7 @@ und diese drei Zeilen hineinkopieren:
 Das Skript baut den kompletten Konfigurator in das leere `<div class="et-konfigurator">`.
 Das Element darf nur **einmal pro Seite** vorkommen.
 
-### Schritt 4: Chat-Assistent einbinden (optional)
-
-In Webflow unter **Site Settings → Custom Code → Footer Code** einfügen:
-
-```html
-<script src="https://cdn.jsdelivr.net/gh/avriomarketing/easytraktor-konfigurator@chat-v1.0.0/dist/easytraktor-chat.js" defer></script>
-```
-
-Unten rechts erscheint dann ein Chat-Button. Der Chat schickt Nachrichten an einen
-Webhook unter `automat.tec.zone`; ohne diesen Dienst antwortet er nicht.
-Auf easytraktor.de wird das Skript erst nach Zustimmung im Cookie-Manager geladen.
-Details in [`chat/README.md`](chat/README.md).
-
-### Schritt 5: Veröffentlichen und prüfen
+### Schritt 4: Veröffentlichen und prüfen
 
 1. Die **gesamte Site** publishen (nicht nur die Seite), damit die CMS-Daten im HTML landen.
 2. Auf der Live-Seite prüfen: Marke wechseln, Modell wählen, Slider und Checkboxen
@@ -82,9 +68,9 @@ jsDelivr die Dateien nicht ausliefern.
 
 ## Änderungen ausrollen
 
-1. In `src/` bzw. `chat/` ändern.
+1. In `src/` ändern.
 2. `node build.js` ausführen (erzeugt `dist/`).
-3. Committen und einen neuen Tag setzen: Konfigurator `v2.0.x`, Chat `chat-v1.0.x`.
+3. Committen und einen neuen Tag setzen, z. B. `v2.0.5`.
 4. Tag pushen und im Webflow-Embed die Versionsnummer auf den neuen Tag ändern, dann publishen.
 
 Getaggte Stände sind bei jsDelivr unveränderlich. Rollback = im Embed den alten Tag eintragen.
@@ -143,7 +129,6 @@ verfügbar"). Fehlt die Liste, gelten alle Marken als verfügbar.
 | `v2.0.0` | Teletrak-Variante (JCB) |
 | `v2.0.1` – `v2.0.3` | Mobil- und iPhone-Korrekturen (Slider, Labels, Checkboxen) |
 | `v2.0.4` | Schrift lokal eingebettet statt Google Fonts (DSGVO) |
-| `chat-v1.0.0` | Chat-Assistent aus der alten TYPO3-Seite übernommen |
 
 Ältere Entwürfe, Testseiten und Projektnotizen sind aus dem aktuellen Stand entfernt,
 liegen aber weiterhin in der Git-Historie (z. B. unter Tag `v2.0.4`).

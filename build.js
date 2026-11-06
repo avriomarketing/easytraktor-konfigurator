@@ -3,9 +3,6 @@
 //     (Reihenfolge wichtig: Pricing + Datenquelle (Model) zuerst, Controller zuletzt)
 //  2. schreibt src/konfigurator.css -> dist/konfigurator.css und bettet dabei die
 //     Schrift Manrope (fonts/) als Base64 ein — kein Abruf bei Google Fonts
-//  3. baut den Chat-Assistenten zu dist/easytraktor-chat.js: chat/chat-app.html
-//     (mit derselben eingebetteten Schrift) wird als String in chat/chat-launcher.js
-//     eingesetzt — eine einzige Datei, keine externen Abrufe.
 // Nach dem Build ist dist/ die vollständige CDN-Payload.
 // Aufruf: node build.js
 const fs = require('fs');
@@ -34,20 +31,19 @@ const parts = FILES.map((f) => {
 });
 
 // Schrift Manrope (OFL, lateinischer Zeichensatz, Gewichte 400–700) — wird in
-// Konfigurator-CSS und Chat eingebettet, damit zur Laufzeit nichts von extern kommt.
+// die Konfigurator-CSS eingebettet, damit zur Laufzeit nichts von extern kommt.
 const FONT_MARKER = '/*__MANROPE_FONT_FACE__*/';
 const fontB64 = fs.readFileSync(path.join(__dirname, 'fonts', 'manrope-latin-wght.woff2')).toString('base64');
 const fontFaceFor = (family) => "@font-face{font-family:'" + family + "';font-style:normal;font-weight:400 700;font-display:swap;"
   + 'src:url(data:font/woff2;base64,' + fontB64 + ") format('woff2');}";
-// Konfigurator: eigener Name, damit die Manrope der Website (Webflow-gehostet)
-// nicht seitenweit überschrieben wird. Chat: läuft im iframe, dort „Manrope".
-const fontFace = fontFaceFor('Manrope');
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(OUT, banner + parts.join('\n'));
 
 const cssSrc = fs.readFileSync(CSS_SRC, 'utf8');
 if (!cssSrc.includes(FONT_MARKER)) throw new Error('konfigurator.css: Platzhalter ' + FONT_MARKER + ' fehlt');
+// Eigener Familienname, damit die Manrope der Website (Webflow-gehostet)
+// nicht seitenweit überschrieben wird.
 fs.writeFileSync(CSS_OUT, cssSrc.replace(FONT_MARKER, fontFaceFor('Manrope ET')));
 
 const jsKb = (fs.statSync(OUT).size / 1024).toFixed(1);
@@ -55,20 +51,3 @@ const cssKb = (fs.statSync(CSS_OUT).size / 1024).toFixed(1);
 console.log(`geschrieben: dist/easytraktor-konfigurator.js (${jsKb} KB)`);
 console.log(`geschrieben: dist/konfigurator.css (${cssKb} KB)`);
 
-// ── Chat-Assistent ─────────────────────────────────────────────────────
-const CHAT_DIR = path.join(__dirname, 'chat');
-const CHAT_OUT = path.join(OUT_DIR, 'easytraktor-chat.js');
-const APP_MARKER = "/*__CHAT_APP_HTML__*/''";
-
-let appHtml = fs.readFileSync(path.join(CHAT_DIR, 'chat-app.html'), 'utf8');
-if (!appHtml.includes(FONT_MARKER)) throw new Error('chat-app.html: Platzhalter ' + FONT_MARKER + ' fehlt');
-appHtml = appHtml.replace(FONT_MARKER, fontFace);
-
-let launcher = fs.readFileSync(path.join(CHAT_DIR, 'chat-launcher.js'), 'utf8');
-if (!launcher.includes(APP_MARKER)) throw new Error('chat-launcher.js: Platzhalter ' + APP_MARKER + ' fehlt');
-// Als JS-String einsetzen; "</" maskieren, falls die Datei je inline in ein <script> kopiert wird.
-launcher = launcher.replace(APP_MARKER, () => JSON.stringify(appHtml).replace(/<\//g, '<\\/'));
-
-fs.writeFileSync(CHAT_OUT, launcher);
-const chatKb = (fs.statSync(CHAT_OUT).size / 1024).toFixed(1);
-console.log(`geschrieben: dist/easytraktor-chat.js (${chatKb} KB)`);

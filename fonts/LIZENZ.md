@@ -10,5 +10,5 @@ Die Schrift darf eingebettet und weitergegeben werden; dieser Hinweis gehört da
 
 Quelle der Datei: Google Fonts (lateinisches Subset; identisch mit der Datei,
 die Google für Manrope 400/600/700 ausliefert). Sie wird beim Build als Base64 in
-`dist/konfigurator.css` und `dist/easytraktor-chat.js` eingebettet und zur
+`dist/konfigurator.css` eingebettet und zur
 Laufzeit NICHT von extern geladen (kein Kontakt zu Google-Servern).
